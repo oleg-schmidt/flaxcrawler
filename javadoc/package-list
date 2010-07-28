@@ -1,0 +1,8 @@
+com.googlecode.flaxcrawler
+com.googlecode.flaxcrawler.concurrent
+com.googlecode.flaxcrawler.download
+com.googlecode.flaxcrawler.frontier
+com.googlecode.flaxcrawler.model
+com.googlecode.flaxcrawler.parse
+com.googlecode.flaxcrawler.proxy
+com.googlecode.flaxcrawler.utils
