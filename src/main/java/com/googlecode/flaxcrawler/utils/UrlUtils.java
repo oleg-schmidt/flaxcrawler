@@ -1,6 +1,8 @@
 package com.googlecode.flaxcrawler.utils;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
@@ -206,13 +208,29 @@ public class UrlUtils {
      * @param proxy
      */
     public static String downloadString(URL url, Proxy proxy) {
+        URLConnection connection = null;
+        InputStream inputStream = null;
+
         try {
-            URLConnection connection = proxy == null ? url.openConnection() : url.openConnection(proxy);
+            connection = proxy == null ? url.openConnection() : url.openConnection(proxy);
             connection.connect();
-            return IOUtils.toString(connection.getInputStream());
+            inputStream = connection.getInputStream();
+            return IOUtils.toString(inputStream);
         } catch (IOException ex) {
             // Ignoring exception
             return null;
+        } finally {
+            try {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+            } catch (Exception ex) {
+                // Ignore
+            }
+
+            if (connection != null && connection instanceof HttpURLConnection) {
+                ((HttpURLConnection) connection).disconnect();
+            }
         }
     }
 }
