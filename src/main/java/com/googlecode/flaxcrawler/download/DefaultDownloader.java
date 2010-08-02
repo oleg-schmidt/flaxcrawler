@@ -244,8 +244,10 @@ public class DefaultDownloader implements Downloader {
     protected Page headRequest(Request request, Proxy proxy) throws DownloadException {
         long startTime = System.currentTimeMillis();
 
+        HttpURLConnection connection = null;
+
         try {
-            HttpURLConnection connection = createConnection(request, proxy);
+            connection = createConnection(request, proxy);
             connection.setRequestMethod("HEAD");
             connection.connect();
 
@@ -264,6 +266,10 @@ public class DefaultDownloader implements Downloader {
             String message = "Error while processing HEAD request to " + request.getUrl() + (proxy == null ? " not using proxy" : "using proxy " + proxy);
             log.info(message);
             throw new DownloadException(message, ex);
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
     }
 
