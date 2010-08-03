@@ -217,7 +217,7 @@ public class DefaultDownloader implements Downloader {
      * @return
      */
     protected HttpURLConnection createConnection(Request request, Proxy proxy) throws IOException {
-        log.debug("Openging connection to " + request.getUrl() + (proxy == null ? " not using proxy" : "using proxy " + proxy));
+        log.debug("Opening connection to " + request.getUrl() + (proxy == null ? " not using proxy " : " using proxy " + proxy));
 
         // Openging connection
         HttpURLConnection connection = (HttpURLConnection) (proxy == null ? request.getUrl().openConnection() : request.getUrl().openConnection(proxy));
