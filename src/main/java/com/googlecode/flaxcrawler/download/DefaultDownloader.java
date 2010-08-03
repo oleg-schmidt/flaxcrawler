@@ -267,8 +267,8 @@ public class DefaultDownloader implements Downloader {
             long responseTime = System.currentTimeMillis() - startTime;
             return createPage(request, null, responseCode, responseHeaders, null, responseTime);
         } catch (IOException ex) {
-            String message = "Error while processing HEAD request to " + request.getUrl() + (proxy == null ? " not using proxy" : "using proxy " + proxy);
-            log.info(message);
+            String message = "Error while processing HEAD request to " + request.getUrl() + (proxy == null ? " not using proxy" : " using proxy " + proxy);
+            log.info(message, ex);
             throw new DownloadException(message, ex);
         } finally {
             if (connection != null) {
