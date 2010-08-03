@@ -335,11 +335,11 @@ public class DefaultDownloader implements Downloader {
                 encoding = "UTF-8";
             }
         } catch (SocketTimeoutException ex) {
-            log.info("Timeout exception for url " + request.getUrl());
+            log.info("Timeout exception for url " + request.getUrl() + (proxy == null ? " not using proxy" : " using proxy " + proxy));
             // Setting response code to 408
             responseCode = HttpURLConnection.HTTP_CLIENT_TIMEOUT;
         } catch (IOException ex) {
-            log.error("Error while requesting url " + request.getUrl(), ex);
+            log.error("Error while requesting url " + request.getUrl() + (proxy == null ? " not using proxy" : " using proxy " + proxy), ex);
             // Setting response code to 503
             responseCode = HttpURLConnection.HTTP_UNAVAILABLE;
         } finally {
