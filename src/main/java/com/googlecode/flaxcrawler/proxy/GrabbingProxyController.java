@@ -1,5 +1,6 @@
 package com.googlecode.flaxcrawler.proxy;
 
+import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
@@ -48,6 +49,29 @@ public class GrabbingProxyController extends DefaultProxyController {
         };
         grabberTimer = new Timer();
         grabberTimer.schedule(timerTask, GRAB_PERIOD);
+    }
+
+    /**
+     * Creates an instance of the {@code GrabbingProxyController} class.
+     * @param urlsToGrab Urls used to grab proxies
+     * @param proxyCheckUrl Url used to check if proxy is alive (comparing content downloaded with and without proxy)
+     */
+    public GrabbingProxyController(Collection<? extends String> urlsToGrab, String proxyCheckUrl) throws MalformedURLException {
+        this(toUrlsList(urlsToGrab), new URL(proxyCheckUrl));
+    }
+
+    /**
+     * Converts list of strings to list of URLs
+     * @param urls
+     * @return
+     * @throws MalformedURLException
+     */
+    private static List<URL> toUrlsList(Collection<? extends String> urls) throws MalformedURLException {
+        List<URL> urlsList = new ArrayList<URL>();
+        for (String url : urls) {
+            urlsList.add(new URL(url));
+        }
+        return urlsList;
     }
 
     /**

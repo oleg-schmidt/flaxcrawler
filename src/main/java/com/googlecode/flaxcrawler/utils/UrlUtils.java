@@ -17,6 +17,9 @@ import org.apache.commons.lang.StringUtils;
  */
 public class UrlUtils {
 
+    public final static int DEFAULT_READ_TIMEOUT = 10000;
+    public final static int DEFAULT_SOCKET_TIMEOUT = 10000;
+
     /**
      * Removes jsessionid from string
      * @param value
@@ -208,11 +211,27 @@ public class UrlUtils {
      * @param proxy
      */
     public static String downloadString(URL url, Proxy proxy) {
+        return downloadString(url, proxy, DEFAULT_READ_TIMEOUT, DEFAULT_SOCKET_TIMEOUT);
+    }
+
+    /**
+     * Downloads content from the specified url using specified proxy (or do not using it) and timeouts.
+     * Returns null if there's an error.
+     * @param url
+     * @param proxy
+     * @param readTimeout
+     * @param socketTimeout
+     * @return
+     */
+    public static String downloadString(URL url, Proxy proxy, int readTimeout, int socketTimeout) {
         URLConnection connection = null;
         InputStream inputStream = null;
 
         try {
             connection = proxy == null ? url.openConnection() : url.openConnection(proxy);
+            connection.setReadTimeout(readTimeout);
+            connection.setConnectTimeout(socketTimeout);
+
             connection.connect();
             inputStream = connection.getInputStream();
             return IOUtils.toString(inputStream);

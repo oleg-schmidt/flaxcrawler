@@ -1,9 +1,9 @@
 package com.googlecode.flaxcrawler.proxy;
 
+import com.googlecode.flaxcrawler.utils.UrlUtils;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.io.IOUtils;
 
 /**
  * Utility class for parsing proxy lists
@@ -45,8 +44,7 @@ public class ProxyGrabber {
 
         for (URL url : urls) {
             try {
-                URLConnection connection = url.openConnection();
-                String responseBody = IOUtils.toString(connection.getInputStream());
+                String responseBody = UrlUtils.downloadString(url, Proxy.NO_PROXY);
 
                 List<Proxy> parsed = parse(responseBody, url.getHost());
 
@@ -61,7 +59,6 @@ public class ProxyGrabber {
         }
 
         return proxys;
-
     }
 
     private static List<Proxy> parse(String text, String host) {
