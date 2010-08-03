@@ -314,6 +314,10 @@ public class DefaultDownloader implements Downloader {
                 content = IOUtils.toByteArray(connection.getInputStream());
             }
 
+            if (content == null) {
+                throw new DownloadException("Content is empty for " + request.getUrl() + " downloaded through proxy " + proxy);
+            }
+
             // Trying to get charset from the "Content-Type" header
             encoding = getCharset(responseHeaders.get("content-type"));
 
