@@ -150,9 +150,9 @@ public class DefaultDownloader implements Downloader {
                     return headPage;
                 }
 
-                if (headPage.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                    log.debug("Cannot download " + request.getUrl() + (proxy == null ? "" : " through proxy " + proxy));
-                    return null;
+                if (headPage.getResponseCode() >= 400) {
+                    log.debug("Cannot download " + request.getUrl() + (proxy == null ? "" : " through proxy " + proxy) + ", response code is " + headPage.getResponseCode());
+                    continue;
                 }
 
                 if (!checkConstaints(headPage)) {
@@ -162,7 +162,11 @@ public class DefaultDownloader implements Downloader {
 
                 // Downloading using the same proxy
                 Page page = download(request, proxy);
-                return page;
+
+                if (page.getResponseCode() < 400) {
+                    // There was no error, returning page
+                    return page;
+                }
             } catch (DownloadException ex) {
                 log.info("DownloadException while downloading from " + request.getUrl() + ": " + ex.getMessage());
             }
