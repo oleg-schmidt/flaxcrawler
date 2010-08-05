@@ -76,22 +76,27 @@ public class DefaultCrawler implements Crawler {
         log.debug("Getting downloader for " + url + "...");
         Downloader downloader = downloaderController.getDownloader(url);
         log.debug("Downloading from " + url + "...");
-        Page page = downloader.download(url);
 
-        if (page != null) {
-            crawlerTask.setTimeDownloaded(new Date());
+        Page page = null;
 
-            if (page.getResponseCode() == HttpURLConnection.HTTP_OK) {
-                log.debug(url + " was downloaded successfully. Download time " + page.getResponseTime());
-                Parser parser = parserController.getParser(page);
-                log.debug("Parsing " + url);
-                parser.parse(page);
-                crawlerTask.setTimeParsed(new Date());
-                log.debug(url + " has been parsed. " + page.getLinks().size() + " links were found");
+        try {
+            page = downloader.download(url);
+
+            if (page != null) {
+                crawlerTask.setTimeDownloaded(new Date());
+
+                if (page.getResponseCode() == HttpURLConnection.HTTP_OK) {
+                    log.debug(url + " was downloaded successfully. Download time " + page.getResponseTime());
+                    Parser parser = parserController.getParser(page);
+                    log.debug("Parsing " + url);
+                    parser.parse(page);
+                    crawlerTask.setTimeParsed(new Date());
+                    log.debug(url + " has been parsed. " + page.getLinks().size() + " links were found");
+                }
             }
+        } finally {
+            afterCrawl(crawlerTask, page);
         }
-
-        afterCrawl(crawlerTask, page);
 
         return page;
     }
