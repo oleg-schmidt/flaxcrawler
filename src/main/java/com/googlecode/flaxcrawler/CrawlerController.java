@@ -54,9 +54,6 @@ public class CrawlerController {
 
             log.info("Initializing task queue");
             if (queue == null) {
-                log.info("Setting BerkleyQueue instead of default inner task queue");
-                ((TaskQueueImpl) taskQueue).setQueue(new BerkleyQueue(QUEUE_DB_DIR));
-            } else {
                 log.info("Queue is overriden, setting it instead of default inner task queue");
                 ((TaskQueueImpl) taskQueue).setQueue(queue);
             }
