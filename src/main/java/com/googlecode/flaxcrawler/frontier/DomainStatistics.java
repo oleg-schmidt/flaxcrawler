@@ -1,7 +1,5 @@
 package com.googlecode.flaxcrawler.frontier;
 
-import com.sleepycat.persist.model.Entity;
-import com.sleepycat.persist.model.PrimaryKey;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,10 +7,8 @@ import java.util.Map;
  * Represents domain statistics
  * @author ameshkov
  */
-@Entity
 public class DomainStatistics {
 
-    @PrimaryKey
     private String domainName;
     private long scheduled;
     private long downloaded;

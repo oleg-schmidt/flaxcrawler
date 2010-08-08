@@ -11,6 +11,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import com.googlecode.flaxcrawler.model.CrawlerTask;
 import com.googlecode.flaxcrawler.model.Page;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Default statistics service implementation. BerkleyDB is used to store statistics.
@@ -22,7 +24,7 @@ public class DefaultStatisticsService implements StatisticsService {
     private Environment environment;
     private EntityStore statisticsStore;
     private PrimaryIndex<String, UrlElement> urlsIndex;
-    private PrimaryIndex<String, DomainStatistics> statisticsIndex;
+    private Map<String, DomainStatistics> statisticsMap = new HashMap<String, DomainStatistics>();
     private long scheduled = 0;
     private long downloaded = 0;
     private long parsed = 0;
@@ -58,9 +60,7 @@ public class DefaultStatisticsService implements StatisticsService {
 
         environment = new Environment(envFile, environmentConfig);
         statisticsStore = new EntityStore(environment, "BerkleyQueueStore", storeConfig);
-
         urlsIndex = statisticsStore.getPrimaryIndex(String.class, UrlElement.class);
-        statisticsIndex = statisticsStore.getPrimaryIndex(String.class, DomainStatistics.class);
         log.info("Environment successfully initialized");
     }
 
@@ -132,11 +132,11 @@ public class DefaultStatisticsService implements StatisticsService {
 
     public DomainStatistics getDomainStatistics(String domainName) {
         synchronized (this) {
-            DomainStatistics domainStatistics = statisticsIndex.get(domainName);
+            DomainStatistics domainStatistics = statisticsMap.get(domainName);
 
             if (domainStatistics == null) {
                 domainStatistics = new DomainStatistics(domainName);
-                statisticsIndex.put(domainStatistics);
+                statisticsMap.put(domainName, domainStatistics);
             }
 
             return domainStatistics;
@@ -164,8 +164,6 @@ public class DefaultStatisticsService implements StatisticsService {
             if (errors > 0) {
                 domainStatistics.addHttpError(responseCode);
             }
-
-            statisticsIndex.put(domainStatistics);
         }
     }
 }
