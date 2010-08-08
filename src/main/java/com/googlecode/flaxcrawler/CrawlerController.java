@@ -53,7 +53,7 @@ public class CrawlerController {
             statisticsService = new DefaultStatisticsService(STATS_DB_DIR);
 
             log.info("Initializing task queue");
-            if (queue == null) {
+            if (queue != null) {
                 log.info("Queue is overriden, setting it instead of default inner task queue");
                 ((TaskQueueImpl) taskQueue).setQueue(queue);
             }
