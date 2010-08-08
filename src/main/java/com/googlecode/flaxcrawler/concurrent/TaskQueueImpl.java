@@ -17,7 +17,7 @@ public class TaskQueueImpl implements TaskQueue {
     private final Object queueSyncRoot = new Object();
 
     /**
-     * Sets inner queue ({@link DefaultQueue} is used by default. Also you can use {@link BerleyQueue}.)
+     * Sets inner queue ({@link DefaultQueue} is used by default. Also you can use {@link BerkleyQueue}.)
      * @param queue
      */
     public void setQueue(Queue queue) {

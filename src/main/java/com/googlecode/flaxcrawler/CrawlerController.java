@@ -25,8 +25,8 @@ import com.googlecode.flaxcrawler.model.Page;
  */
 public class CrawlerController {
 
-    private final static String STATS_DB_DIR = "stats";
-    private final static String QUEUE_DB_DIR = "queue";
+    public final static String STATS_DB_DIR = "stats";
+    public final static String QUEUE_DB_DIR = "queue";
     private Logger log = Logger.getLogger(this.getClass());
     private CrawlerConfiguration crawlerConfiguration;
     private StatisticsService statisticsService;
