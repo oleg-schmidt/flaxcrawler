@@ -167,6 +167,14 @@ public class CrawlerController {
     }
 
     /**
+     * Count of crawler tasks
+     * @return
+     */
+    public int getTasksCount() {
+        return queue.size();
+    }
+
+    /**
      * Adds crawler seed
      * @param url
      */

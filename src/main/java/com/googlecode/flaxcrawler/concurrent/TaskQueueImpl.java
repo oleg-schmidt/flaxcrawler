@@ -86,6 +86,13 @@ public class TaskQueueImpl implements TaskQueue {
     }
 
     @Override
+    public int size() {
+        synchronized (queueSyncRoot) {
+            return queue.size();
+        }
+    }
+
+    @Override
     public void addWorker(TaskQueueWorker worker) throws TaskQueueException {
         synchronized (syncRoot) {
             if (!isStarted()) {

@@ -126,6 +126,11 @@ public class BerkleyQueue implements Queue {
         }
     }
 
+    @Override
+    public int size() {
+        return (int) berkleyQueueIndex.count();
+    }
+
     @Entity
     public static class BerkleyQueueElement {
 

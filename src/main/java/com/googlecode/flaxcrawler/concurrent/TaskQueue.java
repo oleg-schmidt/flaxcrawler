@@ -36,6 +36,12 @@ public interface TaskQueue {
     void join() throws TaskQueueException;
 
     /**
+     * Task queue size
+     * @return
+     */
+    int size();
+
+    /**
      * Returns {@code true} if {@code TaskQueue} is started. Otherwise returns {@code false}.
      * Warning - it can return {@code false} while stopping but not fully stopped.
      * @return

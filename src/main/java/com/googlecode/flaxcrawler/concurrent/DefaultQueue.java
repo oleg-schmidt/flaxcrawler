@@ -21,4 +21,8 @@ public class DefaultQueue implements Queue {
     public void dispose() {
         // Do nothing
     }
+
+    public int size() {
+        return innerList.size();
+    }
 }

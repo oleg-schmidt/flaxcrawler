@@ -10,4 +10,6 @@ public interface Queue {
     Object poll();
 
     void dispose();
+
+    int size();
 }
