@@ -171,7 +171,7 @@ public class CrawlerController {
      * @return
      */
     public int getTasksCount() {
-        return queue == null ? 0 : queue.size();
+        return taskQueue == null ? 0 : taskQueue.size();
     }
 
     /**
