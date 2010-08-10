@@ -14,14 +14,20 @@ import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
 
 /**
- * Queue implementation using berkley db
+ * Queue implementation using berkley db. {@link DefaultQueue} is used to store first {@code QUEUE_CAPACITY}
+ * tasks. Berkley DB is used to store other tasks. When {@link DefaultQueue} size is less than {@code MIN_QUEUE_CAPACITY} -
+ * tasks are loaded from the berkley db.
  */
 public class BerkleyQueue implements Queue {
 
+    public final static int DEFAULT_QUEUE_CAPACITY = 100000;
     private Logger log = Logger.getLogger(this.getClass());
     private Environment environment;
     private EntityStore berkleyQueueStore;
     private PrimaryIndex<Integer, BerkleyQueueElement> berkleyQueueIndex;
+    private DefaultQueue innerQueue = new DefaultQueue();
+    private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
+    private boolean loadToBerkley = false;
     /**
      * Pointer to the head of queue
      */
@@ -29,7 +35,15 @@ public class BerkleyQueue implements Queue {
     /**
      * Pointer to the next free place in the queue
      */
-    private int endId = 1;//point to next free place in queue
+    private int endId = 1;
+
+    /**
+     * Sets inner {@link DefaultQueue} capacity. Other tasks stored in berkley db.
+     * @param queueCapacity
+     */
+    public void setQueueCapacity(int queueCapacity) {
+        this.queueCapacity = queueCapacity;
+    }
 
     /**
      * Creates an instance of the {@code BerkleyQueue}
@@ -43,7 +57,6 @@ public class BerkleyQueue implements Queue {
 
         environmentConfig.setAllowCreate(true);
         storeConfig.setAllowCreate(true);
-        storeConfig.setTemporary(true);
 
         File envFile = new File(environmentFile);
         if (envFile.exists()) {
@@ -82,7 +95,52 @@ public class BerkleyQueue implements Queue {
 
     @Override
     public synchronized void push(Object obj) throws TaskQueueException {
+        if (loadToBerkley) {
+            putToBerkley(obj);
+        } else {
+            innerQueue.push(obj);
 
+            if (innerQueue.size() >= queueCapacity) {
+                log.info("Tasks count is greater than queue capacity, putting other tasks to berkley db");
+                loadToBerkley = true;
+            }
+        }
+    }
+
+    @Override
+    public synchronized Object poll() {
+        Object obj = innerQueue.poll();
+
+        if (loadToBerkley && innerQueue.size() <= queueCapacity / 10) {
+            loadToBerkley = false;
+
+            // It's time to load tasks from the berkley db
+            for (int i = innerQueue.size(); i < queueCapacity; i++) {
+                log.info("Tasks count is lesser than queueCapacity/10, loading tasks from berkley db");
+                Object toLoad = pollFromBerkley();
+
+                if (toLoad == null) {
+                    break;
+                }
+
+                innerQueue.push(obj);
+            }
+        }
+
+        return obj;
+    }
+
+    @Override
+    public int size() {
+        return (int) berkleyQueueIndex.count() + innerQueue.size();
+    }
+
+    /**
+     * Puts object to berkley db storage
+     * @param obj
+     * @throws TaskQueueException
+     */
+    private void putToBerkley(Object obj) throws TaskQueueException {
         if (obj == null) {
             log.error("Error inserting task to the repository, object is null");
             return;
@@ -107,8 +165,12 @@ public class BerkleyQueue implements Queue {
         }
     }
 
-    @Override
-    public synchronized Object poll() {
+    /**
+     * Polls object from berkley db
+     * @return
+     * @throws TaskQueueException
+     */
+    private Object pollFromBerkley() {
         try {
             BerkleyQueueElement entityBerkleyQueueElement = berkleyQueueIndex.get(startId);
             if (ObjectUtils.equals(entityBerkleyQueueElement, null)) {
@@ -124,11 +186,6 @@ public class BerkleyQueue implements Queue {
             log.error("Error while polling task from repository", ex);
             return null;
         }
-    }
-
-    @Override
-    public int size() {
-        return (int) berkleyQueueIndex.count();
     }
 
     @Entity
