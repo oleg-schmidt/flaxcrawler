@@ -1,6 +1,7 @@
 package com.googlecode.flaxcrawler.frontier;
 
 import com.googlecode.flaxcrawler.frontier.DefaultStatisticsService;
+import com.sleepycat.je.DatabaseException;
 import org.junit.Ignore;
 import org.junit.Test;
 import com.googlecode.flaxcrawler.model.CrawlerTask;
@@ -13,7 +14,7 @@ import static org.junit.Assert.*;
 public class TestDefaultStatisticsService {
 
     @Test
-    public void testAfterScheduling() {
+    public void testAfterScheduling() throws DatabaseException {
         DefaultStatisticsService statisticsService = null;
 
         try {
