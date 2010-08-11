@@ -7,6 +7,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import com.googlecode.flaxcrawler.model.Page;
+import java.util.List;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Downloader that first logs into site's member zone
@@ -73,19 +75,40 @@ public class LoginDownloader extends DefaultDownloader {
             connection.getResponseCode();
             String cookieHeader = "";
 
-            for (int i = 0;; i++) {
-                String headerName = connection.getHeaderFieldKey(i);
-                String headerValue = connection.getHeaderField(i);
+//            for (int i = 0;; i++) {
+//                String headerName = connection.getHeaderFieldKey(i);
+//                String headerValue = connection.getHeaderField(i);
+//
+//                if (headerName == null && headerValue == null) {
+//                    // No more headers
+//                    break;
+//                }
+//                if ("Set-Cookie".equalsIgnoreCase(headerName)) {
+//                    // Parse cookie
+//                    String cookieValue = getCookieValue(headerValue);
+//                    cookieHeader += cookieValue + ";";
+//                }
+//            }
 
-                if (headerName == null && headerValue == null) {
-                    // No more headers
-                    break;
+            Map<String, String> cookieHeaders = new HashMap<String, String>();
+            Map<String, List<String>> headersMap = connection.getHeaderFields();
+            if (headersMap != null && headersMap.size() > 0) {
+                List<String> cookies = headersMap.get("Set-Cookie");
+                if (cookies != null && cookies.size() > 0) {
+                    for (String cookieString : cookies) {
+                        String cookieKey = StringUtils.substringBefore(cookieString, "=");
+                        String cookieValue = getCookieValue(cookieString);
+                        String exCookieValue = cookieHeaders.get(cookieKey);
+                        if (exCookieValue == null) {
+                            cookieHeaders.put(cookieKey, cookieValue);
+                        } else if (cookieValue.length() > exCookieValue.length()) {
+                            cookieHeaders.put(cookieKey, cookieValue);
+                        }
+                    }
                 }
-                if ("Set-Cookie".equalsIgnoreCase(headerName)) {
-                    // Parse cookie
-                    String cookieValue = getCookieValue(headerValue);
-                    cookieHeader += cookieValue + ";";
-                }
+            }
+            for (String cookieKey : cookieHeaders.keySet()) {
+                cookieHeader += cookieHeaders.get(cookieKey) + ";";
             }
 
             Map<String, String> headers = new HashMap<String, String>();
