@@ -34,7 +34,7 @@ public class DefaultStatisticsService implements StatisticsService {
      * Creates an instance of the {@code DefaultStatisticsService}
      * @param environmentFile
      */
-    public DefaultStatisticsService(String environmentFile) {
+    public DefaultStatisticsService(String environmentFile) throws DatabaseException {
         log.info("Initializing statistics storage...");
 
         EnvironmentConfig environmentConfig = new EnvironmentConfig();
@@ -82,13 +82,22 @@ public class DefaultStatisticsService implements StatisticsService {
 
     public boolean isCrawled(String url) {
         synchronized (this) {
-            return urlsIndex.contains(url);
+            try {
+                return urlsIndex.contains(url);
+            } catch (DatabaseException ex) {
+                log.warn("Error checking if url " + url + " is in berkley db index", ex);
+                return false;
+            }
         }
     }
 
     public void afterScheduling(CrawlerTask task) {
         synchronized (this) {
-            urlsIndex.put(new UrlElement(task.getUrl()));
+            try {
+                urlsIndex.put(new UrlElement(task.getUrl()));
+            } catch (DatabaseException ex) {
+                log.warn("Error inserting " + task.getUrl() + " in the berkley db index", ex);
+            }
 
             updateDomainStatistics(task.getDomain(), 1, 0, 0, 0, 0);
             scheduled++;

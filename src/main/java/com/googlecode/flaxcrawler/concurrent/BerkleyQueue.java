@@ -49,7 +49,7 @@ public class BerkleyQueue implements Queue {
      * Creates an instance of the {@code BerkleyQueue}
      * @param environmentFile
      */
-    public BerkleyQueue(String environmentFile) {
+    public BerkleyQueue(String environmentFile) throws DatabaseException {
         log.info("Initializing queue repository");
 
         EnvironmentConfig environmentConfig = new EnvironmentConfig();
@@ -132,7 +132,12 @@ public class BerkleyQueue implements Queue {
 
     @Override
     public int size() {
-        return (int) berkleyQueueIndex.count() + innerQueue.size();
+        try {
+            return (int) berkleyQueueIndex.count() + innerQueue.size();
+        } catch (DatabaseException ex) {
+            log.warn("Error getting size of berkley db index", ex);
+            return innerQueue.size();
+        }
     }
 
     /**
@@ -151,19 +156,14 @@ public class BerkleyQueue implements Queue {
             return;
         }
 
-        try {
-            synchronized (this) {
-                BerkleyQueueElement queueElement = new BerkleyQueueElement(endId, (Task) obj);
-                try {
-                    berkleyQueueIndex.put(queueElement);
-                    log.debug("Put task to berkley queue endId = " + endId++ + ", startId = " + startId);
-                } catch (DatabaseException ex) {
-                    log.error("Error inserting task to the repository", ex);
-                }
+        synchronized (this) {
+            BerkleyQueueElement queueElement = new BerkleyQueueElement(endId, (Task) obj);
+            try {
+                berkleyQueueIndex.put(queueElement);
+                log.debug("Put task to berkley queue endId = " + endId++ + ", startId = " + startId);
+            } catch (DatabaseException ex) {
+                log.error("Error inserting task to the repository", ex);
             }
-        } catch (DatabaseException ex) {
-            log.error("Error inserting object to the repository", ex);
-            throw new TaskQueueException("Error inserting task to the repository", ex);
         }
     }
 
