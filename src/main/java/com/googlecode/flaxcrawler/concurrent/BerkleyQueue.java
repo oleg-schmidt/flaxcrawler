@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
  */
 public class BerkleyQueue implements Queue {
 
-    public final static int DEFAULT_QUEUE_CAPACITY = 100;
+    public final static int DEFAULT_QUEUE_CAPACITY = 1000000;
     private Logger log = Logger.getLogger(this.getClass());
     private Environment environment;
     private EntityStore berkleyQueueStore;
