@@ -21,6 +21,9 @@ import com.googlecode.flaxcrawler.model.Page;
 
 /**
  * Manages crawler workers. {@link CrawlerConfiguration} should be passed to constructor.
+ * Starts crawler threads (one thread for each crawler in {@link CrawlerConfiguration}).
+ * Also makes crawlers satisfy constraints set in {@link CrawlerConfiguration} object ({@code maxParallelRequests},
+ * {@code maxHttpErrors}, etc.).
  * @author ameshkov
  */
 public class CrawlerController {
@@ -43,7 +46,7 @@ public class CrawlerController {
     }
 
     /**
-     * Initializes controllers
+     * Initializes controller
      */
     private void init() throws CrawlerException {
         log.info("Initializing crawler controller");
@@ -148,7 +151,7 @@ public class CrawlerController {
     }
 
     /**
-     * Joins crawler workers and waits for them to finish their work
+     * Joins crawler workers threads and waits for them to finish their work
      */
     public void join() throws CrawlerException {
         try {
@@ -231,7 +234,7 @@ public class CrawlerController {
     }
 
     /**
-     * Checks maximum http errors count
+     * Checks maximum http errors limit
      * @param statistics
      * @return
      */
@@ -270,6 +273,42 @@ public class CrawlerController {
             }
 
             return true;
+        }
+    }
+
+    /**
+     * Schedulles links for crawl. Returns count of schedulled.
+     * @param links
+     * @return
+     */
+    private int scheduleTasks(Crawler crawler, CrawlerTask crawlerTask, List<URL> links) {
+        int scheduled = 0;
+
+        for (URL url : links) {
+            CrawlerTask task = new CrawlerTask(url.toString(), crawlerTask.getLevel() + 1);
+
+            synchronized (workerSyncRoot) {
+                if (crawler.shouldCrawl(task, crawlerTask) && !statisticsService.isCrawled(task.getUrl())) {
+                    enqueueTask(task);
+                    statisticsService.afterScheduling(task);
+                    scheduled++;
+                }
+            }
+        }
+
+        return scheduled;
+    }
+
+    /**
+     * Enqueues task into the queue
+     * @param task
+     */
+    private void enqueueTask(CrawlerTask task) {
+        try {
+            log.debug("Enqueueing task: " + task.getUrl());
+            taskQueue.enqueue(task);
+        } catch (Exception ex) {
+            log.error("Error enqueuing task " + task.getUrl(), ex);
         }
     }
 
@@ -348,7 +387,6 @@ public class CrawlerController {
                 statisticsService.afterParsing(crawlerTask, page);
 
                 log.debug("Scheduling new tasks");
-                int scheduled = 0;
 
                 // Getting specific domain constraints
                 DomainConstraints domainConstraints = crawlerConfiguration.getDomainConstraints(crawlerTask.getDomain());
@@ -360,18 +398,10 @@ public class CrawlerController {
                     return;
                 }
 
+                int scheduled = 0;
                 // Schedulling new tasks
                 if (page.getLinks() != null) {
-                    for (URL url : page.getLinks()) {
-
-                        CrawlerTask task = new CrawlerTask(url.toString(), crawlerTask.getLevel() + 1);
-
-                        if (crawler.shouldCrawl(task, crawlerTask) && !statisticsService.isCrawled(task.getUrl())) {
-                            enqueueTask(task);
-                            statisticsService.afterScheduling(task);
-                            scheduled++;
-                        }
-                    }
+                    scheduled = scheduleTasks(crawler, crawlerTask, page.getLinks());
                 }
                 log.debug(scheduled + " new tasks were scheduled");
             } else if (page.getResponseCode() >= 300 && page.getResponseCode() < 400) {
@@ -386,19 +416,6 @@ public class CrawlerController {
                 }
             } else {
                 log.debug(crawlerTask.getUrl() + " was processed with errors");
-            }
-        }
-
-        /**
-         * Enqueues task into the queue
-         * @param task
-         */
-        private void enqueueTask(CrawlerTask task) {
-            try {
-                log.debug("Enqueueing task: " + task.getUrl());
-                taskQueue.enqueue(task);
-            } catch (Exception ex) {
-                log.error("Error enqueuing task " + task.getUrl(), ex);
             }
         }
     }

@@ -4,7 +4,7 @@ import com.googlecode.flaxcrawler.model.CrawlerTask;
 import com.googlecode.flaxcrawler.model.Page;
 
 /**
- * Service for saving crawler statistics. Also saves urls already parsed.
+ * Service for saving crawler statistics. Also saves parsed documents urls.
  * @author ameshkov
  */
 public interface StatisticsService {

@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
  */
 public class BerkleyQueue implements Queue {
 
-    public final static int DEFAULT_QUEUE_CAPACITY = 100000;
+    public final static int DEFAULT_QUEUE_CAPACITY = 1000000;
     private Logger log = Logger.getLogger(this.getClass());
     private Environment environment;
     private EntityStore berkleyQueueStore;
@@ -111,7 +111,7 @@ public class BerkleyQueue implements Queue {
     public synchronized Object poll() {
         Object obj = innerQueue.poll();
 
-        if (loadToBerkley && innerQueue.size() <= queueCapacity / 10) {
+        if (loadToBerkley && innerQueue.size() <= (queueCapacity / 10)) {
             loadToBerkley = false;
 
             // It's time to load tasks from the berkley db
