@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
  */
 public class BerkleyQueue implements Queue {
 
-    public final static int DEFAULT_QUEUE_CAPACITY = 10000;
+    public final static int DEFAULT_QUEUE_CAPACITY = 100;
     private Logger log = Logger.getLogger(this.getClass());
     private Environment environment;
     private EntityStore berkleyQueueStore;
@@ -123,7 +123,7 @@ public class BerkleyQueue implements Queue {
                     break;
                 }
 
-                innerQueue.push(obj);
+                innerQueue.push(toLoad);
             }
         }
 
@@ -153,10 +153,10 @@ public class BerkleyQueue implements Queue {
 
         try {
             synchronized (this) {
-                BerkleyQueueElement queueElement = new BerkleyQueueElement(endId++, (Task) obj);
+                BerkleyQueueElement queueElement = new BerkleyQueueElement(endId, (Task) obj);
                 try {
                     berkleyQueueIndex.put(queueElement);
-                    log.debug("Put task to berkley queue endId = " + (endId - 1) + ", startId = " + startId);
+                    log.debug("Put task to berkley queue endId = " + endId++ + ", startId = " + startId);
                 } catch (DatabaseException ex) {
                     log.error("Error inserting task to the repository", ex);
                 }
