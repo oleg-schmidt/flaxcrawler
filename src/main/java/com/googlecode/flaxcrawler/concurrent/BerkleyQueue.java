@@ -24,18 +24,18 @@ public class BerkleyQueue implements Queue {
     private Logger log = Logger.getLogger(this.getClass());
     private Environment environment;
     private EntityStore berkleyQueueStore;
-    private PrimaryIndex<Integer, BerkleyQueueElement> berkleyQueueIndex;
+    private PrimaryIndex<Long, BerkleyQueueElement> berkleyQueueIndex;
     private DefaultQueue innerQueue = new DefaultQueue();
     private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
     private boolean loadToBerkley = false;
     /**
      * Pointer to the head of queue
      */
-    private int startId = 1;
+    private long startId = 1;
     /**
      * Pointer to the next free place in the queue
      */
-    private int endId = 1;
+    private long endId = 1;
 
     /**
      * Sets inner {@link DefaultQueue} capacity. Other tasks stored in berkley db.
@@ -75,7 +75,7 @@ public class BerkleyQueue implements Queue {
         environment = new Environment(envFile, environmentConfig);
         berkleyQueueStore = new EntityStore(environment, "BerkleyQueueStore", storeConfig);
 
-        berkleyQueueIndex = berkleyQueueStore.getPrimaryIndex(Integer.class, BerkleyQueueElement.class);
+        berkleyQueueIndex = berkleyQueueStore.getPrimaryIndex(Long.class, BerkleyQueueElement.class);
         log.info("Environment successfully initialized");
     }
 
@@ -152,12 +152,14 @@ public class BerkleyQueue implements Queue {
         }
 
         try {
-            BerkleyQueueElement queueElement = new BerkleyQueueElement(endId++, (Task) obj);
-            try {
-                berkleyQueueIndex.put(queueElement);
-                log.debug("Put task to berkley queue endId = " + (endId - 1) + ", startId = " + startId);
-            } catch (DatabaseException ex) {
-                log.error("Error inserting task to the repository", ex);
+            synchronized (this) {
+                BerkleyQueueElement queueElement = new BerkleyQueueElement(endId++, (Task) obj);
+                try {
+                    berkleyQueueIndex.put(queueElement);
+                    log.debug("Put task to berkley queue endId = " + (endId - 1) + ", startId = " + startId);
+                } catch (DatabaseException ex) {
+                    log.error("Error inserting task to the repository", ex);
+                }
             }
         } catch (DatabaseException ex) {
             log.error("Error inserting object to the repository", ex);
@@ -172,16 +174,19 @@ public class BerkleyQueue implements Queue {
      */
     private Object pollFromBerkley() {
         try {
-            BerkleyQueueElement entityBerkleyQueueElement = berkleyQueueIndex.get(startId);
-            if (ObjectUtils.equals(entityBerkleyQueueElement, null)) {
-                return null;
+            synchronized (this) {
+                BerkleyQueueElement entityBerkleyQueueElement = berkleyQueueIndex.get(startId);
+                if (ObjectUtils.equals(entityBerkleyQueueElement, null)) {
+                    return null;
+                }
+                Task task = entityBerkleyQueueElement.getTask();
+                if (task != null) {
+                    berkleyQueueIndex.delete(startId);
+                    ++startId;
+                }
+                log.debug("Poll task from berkley queue, startId = " + startId);
+                return task;
             }
-            Task task = entityBerkleyQueueElement.getTask();
-            if (task != null) {
-                ++startId;
-            }
-            log.debug("Poll task from berkley queue, startId = " + startId);
-            return task;
         } catch (DatabaseException ex) {
             log.error("Error while polling task from repository", ex);
             return null;
@@ -192,13 +197,13 @@ public class BerkleyQueue implements Queue {
     public static class BerkleyQueueElement {
 
         @PrimaryKey
-        private int primaryKey;
+        private long primaryKey;
         private Task task;
 
         public BerkleyQueueElement() {
         }
 
-        public BerkleyQueueElement(int primaryKey, Task task) {
+        public BerkleyQueueElement(long primaryKey, Task task) {
             this.primaryKey = primaryKey;
             this.task = task;
         }
@@ -206,14 +211,14 @@ public class BerkleyQueue implements Queue {
         /**
          * @return the primaryKey
          */
-        public int getPrimaryKey() {
+        public long getPrimaryKey() {
             return primaryKey;
         }
 
         /**
          * @param primaryKey the primaryKey to set
          */
-        public void setPrimaryKey(int primaryKey) {
+        public void setPrimaryKey(long primaryKey) {
             this.primaryKey = primaryKey;
         }
 
