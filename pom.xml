@@ -173,7 +173,7 @@
         <dependency>
             <groupId>com.sleepycat</groupId>
             <artifactId>je</artifactId>
-            <version>3.3.75</version>
+            <version>4.0.71</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
