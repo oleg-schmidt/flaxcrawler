@@ -41,7 +41,10 @@ public class DefaultStatisticsService implements StatisticsService {
         StoreConfig storeConfig = new StoreConfig();
 
         environmentConfig.setAllowCreate(true);
+        environmentConfig.setTransactional(false);
+        environmentConfig.setSharedCache(true);
         storeConfig.setAllowCreate(true);
+        storeConfig.setTransactional(false);
         storeConfig.setTemporary(true);
 
         File envFile = new File(environmentFile);

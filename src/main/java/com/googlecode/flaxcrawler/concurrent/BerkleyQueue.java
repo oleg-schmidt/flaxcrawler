@@ -56,7 +56,11 @@ public class BerkleyQueue implements Queue {
         StoreConfig storeConfig = new StoreConfig();
 
         environmentConfig.setAllowCreate(true);
+        environmentConfig.setTransactional(false);
+        environmentConfig.setSharedCache(true);
         storeConfig.setAllowCreate(true);
+        storeConfig.setTransactional(false);
+        storeConfig.setTemporary(true);
 
         File envFile = new File(environmentFile);
         if (envFile.exists()) {
@@ -112,6 +116,7 @@ public class BerkleyQueue implements Queue {
         Object obj = innerQueue.poll();
 
         if (loadToBerkley && innerQueue.size() <= (queueCapacity / 2)) {
+            log.info("Tasks count is lesser than queueCapacity/2, using in-memory now");
             loadToBerkley = false;
         } else if (loadToBerkley && innerQueue.size() <= (queueCapacity / 10)) {
             loadToBerkley = false;
