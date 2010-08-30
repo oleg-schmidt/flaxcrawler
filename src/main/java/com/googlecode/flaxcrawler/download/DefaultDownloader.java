@@ -14,6 +14,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import com.googlecode.flaxcrawler.model.Page;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Base class for all downloaders
@@ -388,6 +389,7 @@ public class DefaultDownloader implements Downloader {
                 if (index != -1) {
                     // Encoding found successfully, returning
                     charset = t.substring(index + 8);
+                    charset = StringUtils.split(charset, ",;")[0];
                     return charset;
                 }
             }

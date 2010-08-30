@@ -20,7 +20,7 @@ import static org.junit.Assert.*;
 public class TestDefaultDownloader {
 
     @Test
-    @Ignore
+    //@Ignore
     public void testDownload() throws MalformedURLException, DownloadException {
         List<Proxy> proxies = new ArrayList<Proxy>();
         proxies.add(Proxy.NO_PROXY);
@@ -32,7 +32,7 @@ public class TestDefaultDownloader {
         downloader.setProxyController(proxyController);
         downloader.setTriesCount(3);
 
-        Page page = downloader.download(new URL("http://poststar.ru"));
+        Page page = downloader.download(new URL("http://flax.ru/search?query=photoshop"));
         assertNotNull(page);
 
         System.out.println("Response time: " + page.getResponseTime());
