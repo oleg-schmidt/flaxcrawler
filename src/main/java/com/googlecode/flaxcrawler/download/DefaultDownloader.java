@@ -14,6 +14,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import com.googlecode.flaxcrawler.model.Page;
+import java.io.FileNotFoundException;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -336,11 +337,15 @@ public class DefaultDownloader implements Downloader {
                 encoding = "UTF-8";
             }
         } catch (SocketTimeoutException ex) {
-            log.info("Timeout exception for url " + request.getUrl() + (proxy == null ? " not using proxy" : " using proxy " + proxy));
+            log.warn("Timeout exception for url " + request.getUrl() + (proxy == null ? " not using proxy" : " using proxy " + proxy));
             // Setting response code to 408
             responseCode = HttpURLConnection.HTTP_CLIENT_TIMEOUT;
+        } catch (FileNotFoundException ex) {
+            log.warn("FileNotFoundException for url " + request.getUrl() + (proxy == null ? " not using proxy" : " using proxy " + proxy), ex);
+            // Setting response code to 404
+            responseCode = HttpURLConnection.HTTP_NOT_FOUND;
         } catch (IOException ex) {
-            log.error("Error while requesting url " + request.getUrl() + (proxy == null ? " not using proxy" : " using proxy " + proxy), ex);
+            log.warn("Error while requesting url " + request.getUrl() + (proxy == null ? " not using proxy" : " using proxy " + proxy), ex);
             // Setting response code to 503
             responseCode = HttpURLConnection.HTTP_UNAVAILABLE;
         } finally {
