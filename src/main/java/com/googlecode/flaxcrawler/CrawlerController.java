@@ -18,6 +18,7 @@ import com.googlecode.flaxcrawler.frontier.DomainStatistics;
 import com.googlecode.flaxcrawler.frontier.StatisticsService;
 import com.googlecode.flaxcrawler.model.CrawlerTask;
 import com.googlecode.flaxcrawler.model.Page;
+import java.util.LinkedList;
 
 /**
  * Manages crawler workers. {@link CrawlerConfiguration} should be passed to constructor.
@@ -317,6 +318,7 @@ public class CrawlerController {
      */
     private class CrawlerWorker extends BaseTaskQueueWorker {
 
+        private final static long DEFAULT_DEFER_TIMEOUT = 5000;
         private Crawler crawler;
 
         /**
@@ -347,13 +349,13 @@ public class CrawlerController {
 
             if (!checkPolitenessPeriod(statistics)) {
                 log.debug("Waiting for politeness period for domain " + statistics.getDomainName());
-                enqueueTask(crawlerTask);
+                deferTask(crawlerTask, DEFAULT_DEFER_TIMEOUT);
                 return;
             }
 
             if (!startProcessingDomain(crawlerTask.getDomain())) {
-                log.debug("Max parallel requests limit is exceeded - enqueueing task to the end of queue");
-                enqueueTask(crawlerTask);
+                log.debug("Max parallel requests limit is exceeded - deferring task");
+                deferTask(crawlerTask, DEFAULT_DEFER_TIMEOUT);
                 return;
             }
 
