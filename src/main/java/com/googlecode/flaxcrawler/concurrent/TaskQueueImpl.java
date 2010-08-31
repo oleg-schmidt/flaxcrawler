@@ -92,7 +92,7 @@ public class TaskQueueImpl implements TaskQueue {
         synchronized (queueSyncRoot) {
             Task task = null;
 
-            if (deferredTasks.size() > 0 && deferredTasks.firstKey() <= System.currentTimeMillis()) {
+            if (deferredTasks.size() > 0 && deferredTasks.firstKey() >= System.currentTimeMillis()) {
                 // There's a deferred task ready for execution
                 task = deferredTasks.remove(deferredTasks.firstKey());
             } else {
