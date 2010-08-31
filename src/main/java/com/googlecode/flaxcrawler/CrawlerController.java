@@ -317,7 +317,7 @@ public class CrawlerController {
      */
     private class CrawlerWorker extends BaseTaskQueueWorker {
 
-        private final static long DEFAULT_DEFER_TIMEOUT = 5000;
+        private final static long DEFAULT_DEFER_TIMEOUT = 500;
         private Crawler crawler;
 
         /**
