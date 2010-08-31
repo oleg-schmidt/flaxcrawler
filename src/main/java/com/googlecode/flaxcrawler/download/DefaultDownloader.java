@@ -135,6 +135,8 @@ public class DefaultDownloader implements Downloader {
     public Page download(URL url) throws DownloadException {
         Request request = createRequest(url);
 
+        Page page = null;
+
         for (int i = 0; i < triesCount; i++) {
             try {
                 log.debug("Downloading from " + url + ", try number " + (i + 1));
@@ -162,20 +164,18 @@ public class DefaultDownloader implements Downloader {
                 }
 
                 // Downloading using the same proxy
-                Page page = download(request, proxy);
+                page = download(request, proxy);
 
                 if (page.getResponseCode() < 400) {
                     // There was no error, returning page
                     return page;
                 }
             } catch (DownloadException ex) {
-                log.info("DownloadException while downloading from " + request.getUrl() + ": " + ex.getMessage());
+                log.info("DownloadException while downloading from " + request.getUrl() + ": " + ex.getMessage() + ", try number " + i);
             }
         }
 
-        String message = "Could not download " + url;
-        log.error(message);
-        throw new DownloadException(message);
+        return page;
     }
 
     /**

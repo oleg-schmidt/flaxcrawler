@@ -18,7 +18,6 @@ import com.googlecode.flaxcrawler.frontier.DomainStatistics;
 import com.googlecode.flaxcrawler.frontier.StatisticsService;
 import com.googlecode.flaxcrawler.model.CrawlerTask;
 import com.googlecode.flaxcrawler.model.Page;
-import java.util.Random;
 
 /**
  * Manages crawler workers. {@link CrawlerConfiguration} should be passed to constructor.
@@ -318,7 +317,6 @@ public class CrawlerController {
      */
     private class CrawlerWorker extends BaseTaskQueueWorker {
 
-        private final static long DEFAULT_DEFER_TIMEOUT = 5000;
         private Crawler crawler;
 
         /**
@@ -417,7 +415,7 @@ public class CrawlerController {
                     statisticsService.afterScheduling(task);
                 }
             } else {
-                log.debug(crawlerTask.getUrl() + " was processed with errors");
+                log.debug(crawlerTask.getUrl() + " was processed with errors, response code: " + page.getResponseCode());
             }
         }
     }
