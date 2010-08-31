@@ -52,6 +52,7 @@ public class LoginDownloader extends DefaultDownloader {
             if (System.currentTimeMillis() - lastLoginTime > sessionDuration) {
                 getLogger().info("Login downloader should log in to " + loginUrl);
                 login();
+                lastLoginTime = System.currentTimeMillis();
             }
         }
 
@@ -89,6 +90,7 @@ public class LoginDownloader extends DefaultDownloader {
             Map<String, String> headers = new HashMap<String, String>();
             headers.put("Cookie", sb.toString());
             setRequestHeaders(headers);
+            getLogger().info("Logged in to " + loginUrl + " successfully");
         } catch (Exception ex) {
             getLogger().error("Error logging in to " + loginUrl + " using post data " + postData, ex);
         } finally {
