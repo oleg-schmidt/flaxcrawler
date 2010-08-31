@@ -56,6 +56,13 @@ public interface TaskQueue {
     void enqueue(Task task) throws TaskQueueException;
 
     /**
+     * Defers {@link Task} execution for the specified timeout (in milliseconds)
+     * @param task
+     * @param timeout
+     */
+    void defer(Task task, long timeout);
+
+    /**
      * Retrieves and removes the head of this queue, or returns null if this queue is empty.
      * @return Task
      */

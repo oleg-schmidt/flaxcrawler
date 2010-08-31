@@ -18,7 +18,6 @@ import com.googlecode.flaxcrawler.frontier.DomainStatistics;
 import com.googlecode.flaxcrawler.frontier.StatisticsService;
 import com.googlecode.flaxcrawler.model.CrawlerTask;
 import com.googlecode.flaxcrawler.model.Page;
-import java.util.LinkedList;
 
 /**
  * Manages crawler workers. {@link CrawlerConfiguration} should be passed to constructor.

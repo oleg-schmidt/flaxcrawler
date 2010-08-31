@@ -2,6 +2,8 @@ package com.googlecode.flaxcrawler.concurrent;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import org.apache.log4j.Logger;
 
 /**
@@ -13,6 +15,7 @@ public class TaskQueueImpl implements TaskQueue {
     private Queue queue = new DefaultQueue();
     private List<TaskQueueWorker> workers = new ArrayList<TaskQueueWorker>();
     private boolean started;
+    private SortedMap<Long, Task> deferredTasks = new TreeMap<Long, Task>();
     private final Object syncRoot = new Object();
     private final Object queueSyncRoot = new Object();
 
@@ -78,9 +81,25 @@ public class TaskQueueImpl implements TaskQueue {
     }
 
     @Override
+    public void defer(Task task, long timeout) {
+        synchronized (queueSyncRoot) {
+            deferredTasks.put(timeout + System.currentTimeMillis(), task);
+        }
+    }
+
+    @Override
     public Task dequeue() {
         synchronized (queueSyncRoot) {
-            Task task = (Task) queue.poll();
+            Task task = null;
+
+            if (deferredTasks.size() > 0 && deferredTasks.firstKey() <= System.currentTimeMillis()) {
+                // There's a deferred task ready for execution
+                task = deferredTasks.remove(deferredTasks.firstKey());
+            } else {
+                // There's no deferred tasks ready for execution - dequeueing task from the task queue
+                task = (Task) queue.poll();
+            }
+
             return task;
         }
     }
@@ -88,7 +107,7 @@ public class TaskQueueImpl implements TaskQueue {
     @Override
     public int size() {
         synchronized (queueSyncRoot) {
-            return queue.size();
+            return queue.size() + deferredTasks.size();
         }
     }
 

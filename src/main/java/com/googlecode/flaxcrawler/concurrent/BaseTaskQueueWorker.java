@@ -90,7 +90,7 @@ public abstract class BaseTaskQueueWorker implements TaskQueueWorker {
 
         while (started && getTaskQueue().isStarted()) {
             try {
-                task = getTask();
+                task = getTaskQueue().dequeue();
                 if (task != null) {
                     doWork(task);
                 }
@@ -104,28 +104,12 @@ public abstract class BaseTaskQueueWorker implements TaskQueueWorker {
     }
 
     /**
-     * Gets {@link Task} to execute. It could be dequeued from the task queue or get from the deferred tasks.
-     * @return
-     */
-    private Task getTask() {
-        if (deferredTasks.size() > 0 && deferredTasks.firstKey() <= System.currentTimeMillis()) {
-            // There's a deferred task ready for execution
-            Task task = deferredTasks.remove(deferredTasks.firstKey());
-            return task;
-        }
-
-        // There's no deferred tasks ready for execution - dequeueing task from the task queue
-        return getTaskQueue().dequeue();
-    }
-
-    /**
      * Defers specified task for the specified timeout (in milliseconds)
      * @param task
      * @param timeout
      */
     protected void deferTask(Task task, long timeout) {
-        // Key is the time when this task should be executed
-        deferredTasks.put(timeout + System.currentTimeMillis(), task);
+        getTaskQueue().defer(task, timeout);
     }
 
     /**
