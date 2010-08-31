@@ -93,6 +93,9 @@ public abstract class BaseTaskQueueWorker implements TaskQueueWorker {
                 if (task != null) {
                     doWork(task);
                 }
+
+                // Switch context
+                Thread.sleep(1);
             } catch (Exception ex) {
                 TaskQueueException e = new TaskQueueException("Exception in doWork", task, ex);
                 doWorkHandleException(task, e);
