@@ -15,7 +15,6 @@ public abstract class BaseTaskQueueWorker implements TaskQueueWorker {
     private Thread workerThread;
     private boolean started;
     private final Object syncRoot = new Object();
-    private SortedMap<Long, Task> deferredTasks = new TreeMap<Long, Task>();
 
     public BaseTaskQueueWorker() {
         workerThread = new Thread(new Runnable() {
