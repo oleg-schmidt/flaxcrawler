@@ -18,6 +18,7 @@ public class TaskQueueImpl implements TaskQueue {
     private SortedMap<Long, Task> deferredTasks = new TreeMap<Long, Task>();
     private final Object syncRoot = new Object();
     private final Object queueSyncRoot = new Object();
+    private int processingTasksCount;
 
     /**
      * Sets inner queue ({@link DefaultQueue} is used by default. Also you can use {@link BerkleyQueue}.)
@@ -67,6 +68,18 @@ public class TaskQueueImpl implements TaskQueue {
         }
     }
 
+    public int getProcessingTasksCount() {
+        synchronized (queueSyncRoot) {
+            return processingTasksCount;
+        }
+    }
+
+    public void taskProcessed(Task task) {
+        synchronized (queueSyncRoot) {
+            processingTasksCount--;
+        }
+    }
+
     @Override
     public void enqueue(Task task) throws TaskQueueException {
         synchronized (queueSyncRoot) {
@@ -100,6 +113,9 @@ public class TaskQueueImpl implements TaskQueue {
                 task = (Task) queue.poll();
             }
 
+            if (task != null) {
+                processingTasksCount++;
+            }
             return task;
         }
     }
@@ -107,7 +123,7 @@ public class TaskQueueImpl implements TaskQueue {
     @Override
     public int size() {
         synchronized (queueSyncRoot) {
-            return queue.size() + deferredTasks.size();
+            return queue.size() + deferredTasks.size() + processingTasksCount;
         }
     }
 
@@ -125,17 +141,10 @@ public class TaskQueueImpl implements TaskQueue {
         }
     }
 
-    /**
-     * Returns {@code true} if {@code TaskQueue} is already started.
-     * @return the started
-     */
     public boolean isStarted() {
         return started;
     }
 
-    /**
-     * @param started the started to set
-     */
     protected void setStarted(boolean started) {
         this.started = started;
     }

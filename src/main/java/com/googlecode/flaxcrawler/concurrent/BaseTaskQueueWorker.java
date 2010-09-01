@@ -1,7 +1,5 @@
 package com.googlecode.flaxcrawler.concurrent;
 
-import java.util.SortedMap;
-import java.util.TreeMap;
 import org.apache.log4j.Logger;
 
 /**
@@ -99,6 +97,10 @@ public abstract class BaseTaskQueueWorker implements TaskQueueWorker {
             } catch (Exception ex) {
                 TaskQueueException e = new TaskQueueException("Exception in doWork", task, ex);
                 doWorkHandleException(task, e);
+            } finally {
+                if (task != null) {
+                    getTaskQueue().taskProcessed(task);
+                }
             }
         }
 

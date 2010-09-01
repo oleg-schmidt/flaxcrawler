@@ -63,6 +63,12 @@ public interface TaskQueue {
     void defer(Task task, long timeout);
 
     /**
+     * Signals to the queue that task was processed by a worker
+     * @param task
+     */
+    void taskProcessed(Task task);
+
+    /**
      * Retrieves and removes the head of this queue, or returns null if this queue is empty.
      * @return Task
      */
