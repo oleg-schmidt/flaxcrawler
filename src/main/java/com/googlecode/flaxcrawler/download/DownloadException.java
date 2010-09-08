@@ -1,12 +1,13 @@
 package com.googlecode.flaxcrawler.download;
 
+import java.io.IOException;
 import java.net.URL;
 
 /**
  * Downloader exception
  * @author ameshkov
  */
-public class DownloadException extends Exception {
+public class DownloadException extends IOException {
 
     private URL url;
 

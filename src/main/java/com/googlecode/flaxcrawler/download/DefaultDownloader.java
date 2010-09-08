@@ -15,6 +15,7 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import com.googlecode.flaxcrawler.model.Page;
 import java.io.FileNotFoundException;
+import java.io.InputStream;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -32,6 +33,7 @@ public class DefaultDownloader implements Downloader {
     private Map<String, String> headers;
     private String[] allowedContentTypes = new String[]{"text/html"};
     private String userAgent = "";
+    private boolean keepAlive = false;
     private long downloadRetryPeriod = 0;
 
     /**
@@ -108,6 +110,18 @@ public class DefaultDownloader implements Downloader {
     }
 
     /**
+     * Should downloader keep connection alive or not.<br/>
+     * If you want HTTP keep-alive to be off you should:<br/>
+     * Set system property to {@code http.keepAlive=false}.<br/>
+     * Set downloader keepAlive property to false.<br/>
+     * By default {@code keepAlive} property is {@code false}.
+     * @param keepAlive
+     */
+    public void setKeepAlive(boolean keepAlive) {
+        this.keepAlive = keepAlive;
+    }
+
+    /**
      * Returns downloader's logger
      * @return
      */
@@ -120,7 +134,6 @@ public class DefaultDownloader implements Downloader {
      * @param request
      */
     protected void setDefaultHeaders(Request request) {
-        request.addHeader("Connection", "close");
         request.addHeader("Pragma", "no-cache");
         request.addHeader("Cache-Control", "no-cache");
         request.addHeader("Accept-Encoding", "gzip,defalte");
@@ -140,6 +153,8 @@ public class DefaultDownloader implements Downloader {
         setDefaultHeaders(request);
         // Sets user agent
         request.addHeader("User-Agent", userAgent);
+        // Sets keep-alive header
+        request.addHeader("Connection", keepAlive ? "keep-alive" : "close");
 
         // Setting custom headers
         if (headers != null) {
@@ -291,6 +306,7 @@ public class DefaultDownloader implements Downloader {
         long startTime = System.currentTimeMillis();
 
         HttpURLConnection connection = null;
+        String connectionHeader = null;
 
         try {
             connection = createConnection(request, proxy);
@@ -303,8 +319,13 @@ public class DefaultDownloader implements Downloader {
             // Setting response headers
             Map<String, String> responseHeaders = new HashMap<String, String>();
             for (String header : connection.getHeaderFields().keySet()) {
-                responseHeaders.put(header == null ? null : header.toLowerCase(), connection.getHeaderField(header));
+                String headerValue = connection.getHeaderField(header);
+                log.debug("Response header for " + request.getUrl() + " " + header + "=" + headerValue);
+                responseHeaders.put(header == null ? null : header.toLowerCase(), headerValue);
             }
+
+            // Getting Connection header from response
+            connectionHeader = StringUtils.lowerCase(responseHeaders.get("connection"));
 
             long responseTime = System.currentTimeMillis() - startTime;
             return createPage(request, null, responseCode, responseHeaders, null, responseTime);
@@ -313,10 +334,94 @@ public class DefaultDownloader implements Downloader {
             log.info(message, ex);
             throw new DownloadException(message, ex);
         } finally {
+            cleanUpConnection(connection, connectionHeader);
+        }
+    }
+
+    /**
+     * Collects response headers from the open connection
+     * @param connection
+     * @return
+     */
+    private Map<String, String> getResponseHeaders(HttpURLConnection connection) {
+        Map<String, String> responseHeaders = new HashMap<String, String>();
+        // Setting response headers
+        for (String header : connection.getHeaderFields().keySet()) {
+            String headerValue = connection.getHeaderField(header);
+            log.debug("Response header for " + connection.getURL() + " " + header + "=" + headerValue);
+            responseHeaders.put(header == null ? null : header.toLowerCase(), headerValue);
+        }
+
+        return responseHeaders;
+    }
+
+    /**
+     * Returns response content
+     * @param gzipEncoding
+     * @param connection
+     * @return
+     */
+    private byte[] getContent(boolean gzipEncoding, HttpURLConnection connection) throws IOException {
+        InputStream inputStream = connection.getInputStream();
+        byte[] content = null;
+
+        try {
+            // Reading response content
+            if (gzipEncoding) {
+                // Content is gzipped
+                content = IOUtils.toByteArray(new GZIPInputStream(inputStream));
+            } else {
+                // Content is plain
+                content = IOUtils.toByteArray(inputStream);
+            }
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException ex) {
+                    log.warn("Error closing input stream for request " + connection.getURL(), ex);
+                }
+            }
+        }
+
+        return content;
+    }
+
+    /**
+     * Clean up connection. Reads errorStream and closes it, disconnects if needed.
+     * @param connection
+     * @param connectionHeader
+     */
+    private void cleanUpConnection(HttpURLConnection connection, String connectionHeader) {
+        // Handling error stream
+        InputStream errorStream = connection.getErrorStream();
+        try {
+            if (errorStream != null) {
+                String errorMessage = IOUtils.toString(errorStream);
+                log.warn("Server sent an error message for connection " + connection.getURL() + ":\r\n" + errorMessage);
+            }
+        } catch (IOException ex) {
+            log.warn("Exception while processing error stream for connection to " + connection.getURL(), ex);
+        } finally {
+            if (errorStream != null) {
+                try {
+                    errorStream.close();
+                } catch (IOException ex) {
+                    log.warn("Error closing error stream for connection to " + connection.getURL(), ex);
+                }
+            }
+        }
+
+        // Handling connection
+        if (keepAlive && "keep-alive".equals(connectionHeader)) {
+            log.debug("Keep-alive is on, keeping connection after request to " + connection.getURL());
+        } else {
             if (connection != null) {
+                log.debug("Disconnecting connection  after HEAD request to " + connection.getURL());
                 connection.disconnect();
             }
         }
+
     }
 
     /**
@@ -332,6 +437,7 @@ public class DefaultDownloader implements Downloader {
         Map<String, String> responseHeaders = new HashMap<String, String>();
         int responseCode = 0;
         String encoding = null;
+        String connectionHeader = null;
         long startTime = System.currentTimeMillis();
 
         try {
@@ -344,21 +450,15 @@ public class DefaultDownloader implements Downloader {
             responseCode = connection.getResponseCode();
 
             // Setting response headers
-            for (String header : connection.getHeaderFields().keySet()) {
-                responseHeaders.put(header == null ? null : header.toLowerCase(), connection.getHeaderField(header));
-            }
+            responseHeaders = getResponseHeaders(connection);
+
+            // Getting response header "Connection" value
+            connectionHeader = responseHeaders.get("connection");
 
             // Getting content type
             // First checking content encoding header
             String contentEncoding = responseHeaders.get("content-encoding");
-
-            if (contentEncoding != null && "gzip".equals(contentEncoding)) {
-                // Content is gzipped
-                content = IOUtils.toByteArray(new GZIPInputStream(connection.getInputStream()));
-            } else {
-                // Content is plain
-                content = IOUtils.toByteArray(connection.getInputStream());
-            }
+            content = getContent(contentEncoding != null && "gzip".equals(contentEncoding), connection);
 
             if (content == null) {
                 throw new DownloadException("Content is empty for " + request.getUrl() + " downloaded through proxy " + proxy);
@@ -389,10 +489,7 @@ public class DefaultDownloader implements Downloader {
             // Setting response code to 503
             responseCode = HttpURLConnection.HTTP_UNAVAILABLE;
         } finally {
-            if (connection != null) {
-                // Closing connection
-                connection.disconnect();
-            }
+            cleanUpConnection(connection, connectionHeader);
         }
 
         long responseTime = System.currentTimeMillis() - startTime;
