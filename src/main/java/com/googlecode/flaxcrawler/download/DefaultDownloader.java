@@ -195,6 +195,8 @@ public class DefaultDownloader implements Downloader {
                 if (page.getResponseCode() < 400) {
                     // There was no error, returning page
                     return page;
+                } else {
+                    log.info("Return code for " + page.getUrl() + " is " + page.getResponseCode());
                 }
             } catch (DownloadException ex) {
                 log.info("DownloadException while downloading from " + request.getUrl() + ": " + ex.getMessage() + ", try number " + i);
