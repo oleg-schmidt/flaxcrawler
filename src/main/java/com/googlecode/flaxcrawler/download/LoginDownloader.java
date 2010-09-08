@@ -7,9 +7,13 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import com.googlecode.flaxcrawler.model.Page;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Downloader that first logs into site's member zone
@@ -64,15 +68,18 @@ public class LoginDownloader extends DefaultDownloader {
      */
     private synchronized void login() {
         HttpURLConnection connection = null;
+        String connectionHeader = null;
+        OutputStream out = null;
 
         try {
             Request request = createRequest(new URL(loginUrl));
             connection = createConnection(request, Proxy.NO_PROXY);
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
-            OutputStreamWriter out = new OutputStreamWriter(connection.getOutputStream());
-            out.write(postData);
-            out.flush();
+            out = connection.getOutputStream();
+            OutputStreamWriter outwriter = new OutputStreamWriter(out);
+            outwriter.write(postData);
+            outwriter.flush();
 
             connection.getResponseCode();
             Map<String, String> cookies = parseCookies(connection);
@@ -91,12 +98,28 @@ public class LoginDownloader extends DefaultDownloader {
             headers.put("Cookie", sb.toString());
             setRequestHeaders(headers);
             getLogger().info("Logged in to " + loginUrl + " successfully");
+
+            InputStream io = null;
+            try {
+                io = connection.getInputStream();
+                getLogger().debug("Server response is " + IOUtils.toString(io));
+            } finally {
+                if (io != null) {
+                    io.close();
+                }
+            }
         } catch (Exception ex) {
             getLogger().error("Error logging in to " + loginUrl + " using post data " + postData, ex);
         } finally {
-            if (connection != null) {
-                connection.disconnect();
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException ex) {
+                    // Ignore
+                }
             }
+            connectionHeader = connection.getHeaderField("Connection");
+            cleanUpConnection(connection, connectionHeader);
         }
     }
 

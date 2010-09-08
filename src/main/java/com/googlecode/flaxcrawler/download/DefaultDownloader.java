@@ -153,8 +153,13 @@ public class DefaultDownloader implements Downloader {
         setDefaultHeaders(request);
         // Sets user agent
         request.addHeader("User-Agent", userAgent);
-        // Sets keep-alive header
-        request.addHeader("Connection", keepAlive ? "keep-alive" : "close");
+        if (keepAlive) {
+            // Sets keep-alive header
+            request.addHeader("Connection", "keep-alive");
+            request.addHeader("Keep-Alive", "300");
+        } else {
+            request.addHeader("Connection", "close");
+        }
 
         // Setting custom headers
         if (headers != null) {
@@ -343,7 +348,7 @@ public class DefaultDownloader implements Downloader {
      * @param connection
      * @return
      */
-    private Map<String, String> getResponseHeaders(HttpURLConnection connection) {
+    protected Map<String, String> getResponseHeaders(HttpURLConnection connection) {
         Map<String, String> responseHeaders = new HashMap<String, String>();
         // Setting response headers
         for (String header : connection.getHeaderFields().keySet()) {
@@ -361,7 +366,7 @@ public class DefaultDownloader implements Downloader {
      * @param connection
      * @return
      */
-    private byte[] getContent(boolean gzipEncoding, HttpURLConnection connection) throws IOException {
+    protected byte[] getContent(boolean gzipEncoding, HttpURLConnection connection) throws IOException {
         InputStream inputStream = connection.getInputStream();
         byte[] content = null;
 
@@ -392,7 +397,7 @@ public class DefaultDownloader implements Downloader {
      * @param connection
      * @param connectionHeader
      */
-    private void cleanUpConnection(HttpURLConnection connection, String connectionHeader) {
+    protected void cleanUpConnection(HttpURLConnection connection, String connectionHeader) {
         // Handling error stream
         InputStream errorStream = connection.getErrorStream();
         try {
@@ -417,7 +422,7 @@ public class DefaultDownloader implements Downloader {
             log.debug("Keep-alive is on, keeping connection after request to " + connection.getURL());
         } else {
             if (connection != null) {
-                log.debug("Disconnecting connection  after HEAD request to " + connection.getURL());
+                log.debug("Disconnecting connection  after request to " + connection.getURL());
                 connection.disconnect();
             }
         }
