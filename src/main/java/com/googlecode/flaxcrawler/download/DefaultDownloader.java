@@ -32,6 +32,7 @@ public class DefaultDownloader implements Downloader {
     private Map<String, String> headers;
     private String[] allowedContentTypes = new String[]{"text/html"};
     private String userAgent = "";
+    private long downloadRetryPeriod = 0;
 
     /**
      * Sets request headers
@@ -96,6 +97,14 @@ public class DefaultDownloader implements Downloader {
      */
     public void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
+    }
+
+    /**
+     * Period before download tries (by default - 0)
+     * @param period
+     */
+    public void setDownloadRetryPeriod(long downloadRetryPeriod) {
+        this.downloadRetryPeriod = downloadRetryPeriod;
     }
 
     /**
@@ -167,7 +176,11 @@ public class DefaultDownloader implements Downloader {
 
                 if (headPage.getResponseCode() >= 400) {
                     log.debug("Cannot download " + request.getUrl() + (proxy == null ? "" : " through proxy " + proxy) + ", response code is " + headPage.getResponseCode());
-                    continue;
+                    if (i == (triesCount - 1)) {
+                        return headPage;
+                    } else {
+                        continue;
+                    }
                 }
 
                 if (!checkConstaints(headPage)) {
@@ -184,6 +197,14 @@ public class DefaultDownloader implements Downloader {
                 }
             } catch (DownloadException ex) {
                 log.info("DownloadException while downloading from " + request.getUrl() + ": " + ex.getMessage() + ", try number " + i);
+            }
+
+            if (downloadRetryPeriod > 0) {
+                try {
+                    Thread.sleep(downloadRetryPeriod);
+                } catch (InterruptedException ex) {
+                    log.error("Error while sleeping for the retry period", ex);
+                }
             }
         }
 
