@@ -201,6 +201,7 @@ public class DefaultDownloader implements Downloader {
 
             if (downloadRetryPeriod > 0) {
                 try {
+                    log.info("Waiting for retry period of " + downloadRetryPeriod + "ms for request " + request.getUrl());
                     Thread.sleep(downloadRetryPeriod);
                 } catch (InterruptedException ex) {
                     log.error("Error while sleeping for the retry period", ex);
