@@ -31,6 +31,7 @@ public class DefaultDownloader implements Downloader {
     private int readTimeout = 30000;
     private Map<String, String> headers;
     private String[] allowedContentTypes = new String[]{"text/html"};
+    private String userAgent = "";
 
     /**
      * Sets request headers
@@ -89,6 +90,15 @@ public class DefaultDownloader implements Downloader {
     }
 
     /**
+     * Sets bot user-agent header. Overrides request headers.
+     * Default user-agent is FlaxCrawler/1.0
+     * @param userAgent
+     */
+    public void setUserAgent(String userAgent) {
+        this.userAgent = userAgent;
+    }
+
+    /**
      * Returns downloader's logger
      * @return
      */
@@ -101,7 +111,6 @@ public class DefaultDownloader implements Downloader {
      * @param request
      */
     protected void setDefaultHeaders(Request request) {
-        request.addHeader("User-Agent", "FlaxCrawler/1.0");
         request.addHeader("Connection", "close");
         request.addHeader("Pragma", "no-cache");
         request.addHeader("Cache-Control", "no-cache");
@@ -120,6 +129,8 @@ public class DefaultDownloader implements Downloader {
 
         // Setting default headers
         setDefaultHeaders(request);
+        // Sets user agent
+        request.addHeader("User-Agent", userAgent);
 
         // Setting custom headers
         if (headers != null) {
