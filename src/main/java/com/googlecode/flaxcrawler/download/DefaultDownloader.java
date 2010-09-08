@@ -179,6 +179,7 @@ public class DefaultDownloader implements Downloader {
                     if (i == (triesCount - 1)) {
                         return headPage;
                     } else {
+                        waitForRetry(request);
                         continue;
                     }
                 }
@@ -199,17 +200,21 @@ public class DefaultDownloader implements Downloader {
                 log.info("DownloadException while downloading from " + request.getUrl() + ": " + ex.getMessage() + ", try number " + i);
             }
 
-            if (downloadRetryPeriod > 0) {
-                try {
-                    log.info("Waiting for retry period of " + downloadRetryPeriod + "ms for request " + request.getUrl());
-                    Thread.sleep(downloadRetryPeriod);
-                } catch (InterruptedException ex) {
-                    log.error("Error while sleeping for the retry period", ex);
-                }
-            }
+            waitForRetry(request);
         }
 
         return page;
+    }
+
+    private void waitForRetry(Request request) {
+        if (downloadRetryPeriod > 0) {
+            try {
+                log.info("Waiting for retry period of " + downloadRetryPeriod + " ms for request " + request.getUrl());
+                Thread.sleep(downloadRetryPeriod);
+            } catch (InterruptedException ex) {
+                log.error("Error while sleeping for the retry period", ex);
+            }
+        }
     }
 
     /**
