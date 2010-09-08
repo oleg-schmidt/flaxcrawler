@@ -76,6 +76,7 @@ public class LoginDownloader extends DefaultDownloader {
             connection = createConnection(request, Proxy.NO_PROXY);
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
+            connection.setRequestProperty("Connection", "close");
             out = connection.getOutputStream();
             OutputStreamWriter outwriter = new OutputStreamWriter(out);
             outwriter.write(postData);
@@ -120,6 +121,7 @@ public class LoginDownloader extends DefaultDownloader {
             }
             connectionHeader = connection.getHeaderField("Connection");
             cleanUpConnection(connection, connectionHeader);
+            connection.disconnect();
         }
     }
 

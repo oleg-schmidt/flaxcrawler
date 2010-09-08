@@ -312,6 +312,7 @@ public class DefaultDownloader implements Downloader {
 
         HttpURLConnection connection = null;
         String connectionHeader = null;
+        InputStream inputStream = null;
 
         try {
             connection = createConnection(request, proxy);
@@ -332,6 +333,13 @@ public class DefaultDownloader implements Downloader {
             // Getting Connection header from response
             connectionHeader = StringUtils.lowerCase(responseHeaders.get("connection"));
 
+            // Reading input stream
+            inputStream = connection.getInputStream();
+            if (inputStream != null) {
+                byte[] body = IOUtils.toByteArray(inputStream);
+                log.debug("Head response body length is " + (body == null ? 0 : body.length));
+            }
+
             long responseTime = System.currentTimeMillis() - startTime;
             return createPage(request, null, responseCode, responseHeaders, null, responseTime);
         } catch (IOException ex) {
@@ -339,6 +347,14 @@ public class DefaultDownloader implements Downloader {
             log.info(message, ex);
             throw new DownloadException(message, ex);
         } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException ex) {
+                    log.warn("Error closing stream after HEAD request", ex);
+                }
+            }
+
             cleanUpConnection(connection, connectionHeader);
         }
     }
@@ -417,16 +433,8 @@ public class DefaultDownloader implements Downloader {
             }
         }
 
-        // Handling connection
-        if (keepAlive && "keep-alive".equals(connectionHeader)) {
-            log.debug("Keep-alive is on, keeping connection after request to " + connection.getURL());
-        } else {
-            if (connection != null) {
-                log.debug("Disconnecting connection  after request to " + connection.getURL());
-                connection.disconnect();
-            }
-        }
-
+        log.debug("Disconnecting connection  after request to " + connection.getURL());
+        connection.disconnect();
     }
 
     /**
