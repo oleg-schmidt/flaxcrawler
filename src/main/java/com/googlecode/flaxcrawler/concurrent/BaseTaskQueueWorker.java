@@ -84,6 +84,7 @@ public abstract class BaseTaskQueueWorker implements TaskQueueWorker {
     private void doWorkLoop() {
         log.info(workerThread.getName() + " start do work loop");
         Task task = null;
+        int loops = 0;
 
         while (started && getTaskQueue().isStarted()) {
             try {
@@ -92,8 +93,12 @@ public abstract class BaseTaskQueueWorker implements TaskQueueWorker {
                     doWork(task);
                 }
 
-                // Switch context
-                Thread.sleep(1);
+                loops++;
+                if ((loops % 100) == 0) {
+                    // Switch context
+                    Thread.sleep(1);
+                    loops = 0;
+                }
             } catch (Exception ex) {
                 TaskQueueException e = new TaskQueueException("Exception in doWork", task, ex);
                 doWorkHandleException(task, e);
