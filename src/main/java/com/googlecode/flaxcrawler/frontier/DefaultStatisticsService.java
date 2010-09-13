@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 import com.googlecode.flaxcrawler.model.CrawlerTask;
 import com.googlecode.flaxcrawler.model.Page;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 /**
@@ -23,6 +24,7 @@ public class DefaultStatisticsService implements StatisticsService {
     private Logger log = Logger.getLogger(this.getClass());
     private Environment environment;
     private EntityStore statisticsStore;
+    private HashSet<String> urlsProcessed = new HashSet<String>();
     private PrimaryIndex<String, UrlElement> urlsIndex;
     private Map<String, DomainStatistics> statisticsMap = new HashMap<String, DomainStatistics>();
     private long scheduled = 0;
@@ -86,7 +88,8 @@ public class DefaultStatisticsService implements StatisticsService {
     public boolean isCrawled(String url) {
         synchronized (this) {
             try {
-                return urlsIndex.contains(url);
+                return urlsProcessed.contains(url);
+                //return urlsIndex.contains(url);
             } catch (DatabaseException ex) {
                 log.warn("Error checking if url " + url + " is in berkley db index", ex);
                 return false;
@@ -97,7 +100,8 @@ public class DefaultStatisticsService implements StatisticsService {
     public void afterScheduling(CrawlerTask task) {
         synchronized (this) {
             try {
-                urlsIndex.put(new UrlElement(task.getUrl()));
+                urlsProcessed.add(task.getUrl());
+                //urlsIndex.put(new UrlElement(task.getUrl()));                
             } catch (DatabaseException ex) {
                 log.warn("Error inserting " + task.getUrl() + " in the berkley db index", ex);
             }

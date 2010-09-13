@@ -1,8 +1,8 @@
 package com.googlecode.flaxcrawler.model;
 
+import com.googlecode.flaxcrawler.concurrent.BaseTask;
 import com.sleepycat.persist.model.Persistent;
 import java.util.Date;
-import com.googlecode.flaxcrawler.concurrent.Task;
 import com.googlecode.flaxcrawler.utils.UrlUtils;
 
 /**
@@ -10,7 +10,7 @@ import com.googlecode.flaxcrawler.utils.UrlUtils;
  * @author ameshkov
  */
 @Persistent
-public class CrawlerTask implements Task {
+public class CrawlerTask extends BaseTask {
 
     private String url;
     private String domain;
