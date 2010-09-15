@@ -34,6 +34,7 @@ public class DefaultDownloader implements Downloader {
     private String[] allowedContentTypes = new String[]{"text/html"};
     private String userAgent = "";
     private boolean keepAlive = false;
+    private boolean headRequest = true;
     private long downloadRetryPeriod = 0;
 
     /**
@@ -122,6 +123,14 @@ public class DefaultDownloader implements Downloader {
     }
 
     /**
+     * Should downloader first execute a HEAD request against specified URL or not
+     * @param headRequest
+     */
+    public void setHeadRequest(boolean headRequest) {
+        this.headRequest = headRequest;
+    }
+
+    /**
      * Returns downloader's logger
      * @return
      */
@@ -185,28 +194,34 @@ public class DefaultDownloader implements Downloader {
                 // Using proxy
                 Proxy proxy = proxyController == null ? null : proxyController.getProxy();
 
-                // Sending HEAD request using specified proxy
-                Page headPage = headRequest(request, proxy);
+                // If head request is needed - executing and checking constraints
+                if (headRequest) {
+                    // Sending HEAD request using specified proxy
+                    Page headPage = headRequest(request, proxy);
 
-                if (headPage != null && headPage.getResponseCode() >= 300 && headPage.getResponseCode() < 400) {
-                    log.debug("Server redirected our request to " + url);
-                    // No need to request it again
-                    return headPage;
-                }
-
-                if (headPage.getResponseCode() >= 400) {
-                    log.debug("Cannot download " + request.getUrl() + (proxy == null ? "" : " through proxy " + proxy) + ", response code is " + headPage.getResponseCode());
-                    if (i == (triesCount - 1)) {
+                    // This is a redirect
+                    if (headPage != null && headPage.getResponseCode() >= 300 && headPage.getResponseCode() < 400) {
+                        log.debug("Server redirected our request to " + url);
+                        // No need to request it again
                         return headPage;
-                    } else {
-                        waitForRetry(request);
-                        continue;
                     }
-                }
 
-                if (!checkConstaints(headPage)) {
-                    log.info("Request to " + request.getUrl() + " violates this downloader constraints");
-                    return null;
+                    // Error response code
+                    if (headPage.getResponseCode() >= 400) {
+                        log.debug("Cannot download " + request.getUrl() + (proxy == null ? "" : " through proxy " + proxy) + ", response code is " + headPage.getResponseCode());
+                        if (i == (triesCount - 1)) {
+                            return headPage;
+                        } else {
+                            waitForRetry(request);
+                            continue;
+                        }
+                    }
+
+                    // Checking constrains (content length, content type, etc)
+                    if (!checkConstaints(headPage)) {
+                        log.info("Request to " + request.getUrl() + " violates this downloader constraints");
+                        return null;
+                    }
                 }
 
                 // Downloading using the same proxy
