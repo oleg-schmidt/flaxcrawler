@@ -53,6 +53,9 @@ public class DefaultScheduler implements Scheduler {
                 } else {
                     log.debug("Url " + task.getUrl() + " was already crawled");
                 }
+
+                // Yielding context to another thread
+                Thread.sleep(1);
             } catch (Exception ex) {
                 log.error("Error processing task " + task.getUrl() + " from the scheduler queue", ex);
             }
