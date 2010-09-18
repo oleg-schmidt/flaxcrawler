@@ -13,8 +13,10 @@ import com.googlecode.flaxcrawler.concurrent.Queue;
 import com.googlecode.flaxcrawler.concurrent.Task;
 import com.googlecode.flaxcrawler.concurrent.TaskQueue;
 import com.googlecode.flaxcrawler.concurrent.TaskQueueImpl;
+import com.googlecode.flaxcrawler.frontier.DefaultScheduler;
 import com.googlecode.flaxcrawler.frontier.DefaultStatisticsService;
 import com.googlecode.flaxcrawler.frontier.DomainStatistics;
+import com.googlecode.flaxcrawler.frontier.Scheduler;
 import com.googlecode.flaxcrawler.frontier.StatisticsService;
 import com.googlecode.flaxcrawler.model.CrawlerTask;
 import com.googlecode.flaxcrawler.model.Page;
@@ -33,6 +35,7 @@ public class CrawlerController {
     private Logger log = Logger.getLogger(this.getClass());
     private CrawlerConfiguration crawlerConfiguration;
     private StatisticsService statisticsService;
+    private Scheduler scheduler;
     private List<URL> seeds = new ArrayList<URL>();
     private TaskQueue taskQueue = new TaskQueueImpl();
     private Queue queue;
@@ -60,6 +63,9 @@ public class CrawlerController {
                 log.info("Queue is overriden, setting it instead of default inner task queue");
                 ((TaskQueueImpl) taskQueue).setQueue(queue);
             }
+
+            log.info("Initializing scheduler");
+            scheduler = new DefaultScheduler(taskQueue, statisticsService);
 
             log.info("Initializing crawler workers");
             for (Crawler crawler : crawlerConfiguration.getCrawlers()) {
@@ -277,35 +283,41 @@ public class CrawlerController {
     }
 
     /**
-     * Schedulles links for crawl. Returns count of schedulled.
-     * @param links
+     * Schedulles a crawler task
+     * @param crawler
+     * @param task
+     * @param parentTask
      * @return
      */
-    private int scheduleTasks(Crawler crawler, CrawlerTask crawlerTask, List<URL> links) {
-        int scheduled = 0;
-
-        for (URL url : links) {
-            CrawlerTask task = new CrawlerTask(url.toString(), crawlerTask.getLevel() + 1);
-
-            synchronized (workerSyncRoot) {
-                if (crawler.shouldCrawl(task, crawlerTask) && !statisticsService.isCrawled(task.getUrl())) {
-                    enqueueTask(task);
-                    statisticsService.afterScheduling(task);
-                    scheduled++;
-                }
+    private void scheduleTask(Crawler crawler, CrawlerTask task, CrawlerTask parentTask) {
+        synchronized (workerSyncRoot) {
+            if (crawler.shouldCrawl(task, parentTask)) {
+                scheduler.schedule(task);
             }
         }
-
-        return scheduled;
     }
 
     /**
-     * Enqueues task into the queue
+     * Schedules links for crawl. Returns count of scheduled.
+     * @param crawler
+     * @param parentTask
+     * @param links
+     * @return
+     */
+    private void scheduleTasks(Crawler crawler, CrawlerTask parentTask, List<URL> links) {
+        for (URL url : links) {
+            CrawlerTask task = new CrawlerTask(url.toString(), parentTask.getLevel() + 1);
+            scheduleTask(crawler, task, parentTask);
+        }
+    }
+
+    /**
+     * Enqueues task into the queue, deferring its execution
      * @param task
      */
-    private void enqueueTask(CrawlerTask task) {
+    private void deferCrawlerTask(CrawlerTask task) {
         try {
-            log.debug("Enqueueing task: " + task.getUrl());
+            log.debug("Deferring task " + task.getUrl());
             taskQueue.enqueue(task);
         } catch (Exception ex) {
             log.error("Error enqueuing task " + task.getUrl(), ex);
@@ -347,13 +359,13 @@ public class CrawlerController {
 
             if (!checkPolitenessPeriod(statistics)) {
                 log.debug("Waiting for politeness period for domain " + statistics.getDomainName());
-                enqueueTask(crawlerTask);
+                deferCrawlerTask(crawlerTask);
                 return;
             }
 
             if (!startProcessingDomain(crawlerTask.getDomain())) {
                 log.debug("Max parallel requests limit is exceeded - deferring task");
-                enqueueTask(crawlerTask);
+                deferCrawlerTask(crawlerTask);
                 return;
             }
 
@@ -369,7 +381,7 @@ public class CrawlerController {
         /**
          * Processes specified page
          * @param page
-         * @param crawlerTask
+         * @param parentTask
          */
         private void processPage(Page page, CrawlerTask crawlerTask) {
             if (page == null) {
@@ -398,22 +410,17 @@ public class CrawlerController {
                     return;
                 }
 
-                int scheduled = 0;
                 // Schedulling new tasks
                 if (page.getLinks() != null) {
-                    scheduled = scheduleTasks(crawler, crawlerTask, page.getLinks());
+                    scheduleTasks(crawler, crawlerTask, page.getLinks());
                 }
-                log.debug(scheduled + " new tasks were scheduled");
+                log.debug(page.getLinks().size() + " tasks were passed to the scheduler");
             } else if (page.getResponseCode() >= 300 && page.getResponseCode() < 400) {
                 log.debug("Processing redirect from " + crawlerTask.getUrl() + " to " + page.getRedirectUrl());
                 CrawlerTask task = new CrawlerTask(page.getRedirectUrl().toString(), crawlerTask.getLevel());
                 // Passing custom data further
                 task.setCustomData(crawlerTask.getCustomData());
-
-                if (crawler.shouldCrawl(task, crawlerTask) && !statisticsService.isCrawled(task.getUrl())) {
-                    enqueueTask(task);
-                    statisticsService.afterScheduling(task);
-                }
+                scheduleTask(crawler, task, crawlerTask);
             } else {
                 log.debug(crawlerTask.getUrl() + " was processed with errors, response code: " + page.getResponseCode());
             }
