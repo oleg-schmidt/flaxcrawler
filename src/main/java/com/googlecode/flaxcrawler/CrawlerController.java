@@ -414,7 +414,7 @@ public class CrawlerController {
                 if (page.getLinks() != null) {
                     scheduleTasks(crawler, crawlerTask, page.getLinks());
                 }
-                log.debug(page.getLinks().size() + " tasks were passed to the scheduler");
+                log.debug(page.getLinks() == null ? 0 : page.getLinks().size() + " tasks were passed to the scheduler");
             } else if (page.getResponseCode() >= 300 && page.getResponseCode() < 400) {
                 log.debug("Processing redirect from " + crawlerTask.getUrl() + " to " + page.getRedirectUrl());
                 CrawlerTask task = new CrawlerTask(page.getRedirectUrl().toString(), crawlerTask.getLevel());
