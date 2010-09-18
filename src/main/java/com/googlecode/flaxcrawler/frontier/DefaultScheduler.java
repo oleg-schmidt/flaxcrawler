@@ -15,6 +15,7 @@ public class DefaultScheduler implements Scheduler {
     private Logger log = Logger.getLogger(this.getClass());
     private TaskQueue taskQueue;
     private StatisticsService statisticsService;
+    private final Object syncRoot = new Object();
     private final Queue<CrawlerTask> schedulerQueue = new LinkedList<CrawlerTask>();
     private final Thread workerThread;
 
@@ -34,8 +35,10 @@ public class DefaultScheduler implements Scheduler {
     }
 
     public void schedule(CrawlerTask crawlerTask) {
-        log.debug("Enqueueing task " + crawlerTask.getUrl() + " to the scheduler queue");
-        schedulerQueue.add(crawlerTask);
+        synchronized (syncRoot) {
+            log.debug("Enqueueing task " + crawlerTask.getUrl() + " to the scheduler queue");
+            schedulerQueue.add(crawlerTask);
+        }
     }
 
     /**
