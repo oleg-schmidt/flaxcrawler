@@ -43,21 +43,24 @@ public class DefaultScheduler implements Scheduler {
      */
     private void DoWorkLoop() {
         while (true) {
-            CrawlerTask task = schedulerQueue.poll();
+            CrawlerTask task = null;
 
             try {
-                if (!statisticsService.isCrawled(task.getUrl())) {
-                    taskQueue.enqueue(task);
-                    statisticsService.afterScheduling(task);
-                    log.debug("Scheduled crawling of the " + task.getUrl());
-                } else {
-                    log.debug("Url " + task.getUrl() + " was already crawled");
+                task = schedulerQueue.poll();
+                if (task != null) {
+                    if (!statisticsService.isCrawled(task.getUrl())) {
+                        taskQueue.enqueue(task);
+                        statisticsService.afterScheduling(task);
+                        log.debug("Scheduled crawling of the " + task.getUrl());
+                    } else {
+                        log.debug("Url " + task.getUrl() + " was already crawled");
+                    }
                 }
 
                 // Yielding context to another thread
                 Thread.sleep(1);
             } catch (Exception ex) {
-                log.error("Error processing task " + task.getUrl() + " from the scheduler queue", ex);
+                log.error("Error processing task " + task == null ? "NOTASK" : task.getUrl() + " from the scheduler queue", ex);
             }
         }
     }
