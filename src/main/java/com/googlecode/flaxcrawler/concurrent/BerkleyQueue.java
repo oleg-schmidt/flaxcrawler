@@ -120,12 +120,10 @@ public class BerkleyQueue implements Queue {
     public synchronized Object poll() {
         Object obj = innerQueue.poll();
 
-        if (obj == null && berkleyQueueIndex.count() > 0) {
+        if (innerQueue.size() <= (queueCapacity / 10) && berkleyQueueIndex.count() > 0) {
+            log.info("Tasks count is lesser than queueCapacity/10, loading tasks from berkley");
             loadInnerQueueFromBerkley(queueCapacity - innerQueue.size());
-            return innerQueue.poll();
-        }
-
-        if (loadToBerkley && innerQueue.size() <= (queueCapacity / 2)) {
+        } else if (loadToBerkley && innerQueue.size() <= (queueCapacity / 2)) {
             log.info("Tasks count is lesser than queueCapacity/2, using in-memory queue now");
             loadToBerkley = false;
         }
