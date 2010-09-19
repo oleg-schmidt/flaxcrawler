@@ -18,7 +18,6 @@ public class DefaultScheduler implements Scheduler {
     private final Object syncRoot = new Object();
     private final Queue<CrawlerTask> schedulerQueue = new LinkedList<CrawlerTask>();
     private final Thread workerThread;
-    private String lastDomainName = "";
 
     public DefaultScheduler(TaskQueue taskQueue, StatisticsService statisticsService) {
         this.statisticsService = statisticsService;
@@ -53,20 +52,8 @@ public class DefaultScheduler implements Scheduler {
                 task = schedulerQueue.poll();
                 if (task != null) {
                     if (!statisticsService.isCrawled(task.getUrl())) {
-                        // Putting tasks that were not crawled yet to the task queue
-                        // Also comparing last processed domain name with task domain name
-                        // and deferring task if they are equal. This way we're trying
-                        // to make queue more "sparsed"
-                        String domainName = task.getDomain() == null ? "" : task.getDomain();
-
-                        if (lastDomainName.equals(task.getDomain())) {
-                            taskQueue.defer(task);
-                        } else {
-                            taskQueue.enqueue(task);
-                        }
-
+                        taskQueue.enqueue(task);
                         statisticsService.afterScheduling(task);
-                        lastDomainName = domainName;
                         log.debug("Scheduled crawling of the " + task.getUrl());
                     } else {
                         log.debug("Url " + task.getUrl() + " was already crawled");
