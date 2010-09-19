@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
  */
 public class BerkleyQueue implements Queue {
 
-    public final static int DEFAULT_QUEUE_CAPACITY = 250000;
+    public final static int DEFAULT_QUEUE_CAPACITY = 100000;
     private Logger log = Logger.getLogger(this.getClass());
     private Environment environment;
     private EntityStore berkleyQueueStore;
@@ -98,17 +98,22 @@ public class BerkleyQueue implements Queue {
     }
 
     @Override
-    public synchronized void push(Object obj) throws TaskQueueException {
+    public synchronized void add(Object obj) {
         if (loadToBerkley) {
-            putToBerkley(obj);
+            defer(obj);
         } else {
-            innerQueue.push(obj);
+            innerQueue.add(obj);
 
             if (innerQueue.size() >= queueCapacity) {
                 log.info("Tasks count is greater than queue capacity, putting other tasks to berkley db");
                 loadToBerkley = true;
             }
         }
+    }
+
+    @Override
+    public void defer(Object obj) {
+        putToBerkley(obj);
     }
 
     @Override
@@ -130,7 +135,7 @@ public class BerkleyQueue implements Queue {
                     break;
                 }
 
-                innerQueue.push(toLoad);
+                innerQueue.add(toLoad);
             }
         }
 
@@ -152,7 +157,7 @@ public class BerkleyQueue implements Queue {
      * @param obj
      * @throws TaskQueueException
      */
-    private void putToBerkley(Object obj) throws TaskQueueException {
+    private void putToBerkley(Object obj) {
         if (obj == null) {
             log.error("Error inserting task to the repository, object is null");
             return;

@@ -56,11 +56,11 @@ public interface TaskQueue {
     void enqueue(Task task) throws TaskQueueException;
 
     /**
-     * Defers {@link Task} execution for the specified timeout (in milliseconds)
+     * Defers {@link Task} execution
      * @param task
      * @param timeout
      */
-    void defer(Task task, long timeout);
+    void defer(Task task);
 
     /**
      * Signals to the queue that task was processed by a worker

@@ -10,8 +10,12 @@ public class DefaultQueue implements Queue {
 
     private LinkedList innerList = new LinkedList();
 
-    public void push(Object obj) {
+    public void add(Object obj) {
         innerList.add(obj);
+    }
+
+    public void defer(Object obj) {
+        add(obj);
     }
 
     public Object poll() {

@@ -108,15 +108,6 @@ public abstract class BaseTaskQueueWorker implements TaskQueueWorker {
     }
 
     /**
-     * Defers specified task for the specified timeout (in milliseconds)
-     * @param task
-     * @param timeout
-     */
-    protected void deferTask(Task task, long timeout) {
-        getTaskQueue().defer(task, timeout);
-    }
-
-    /**
      * Handles exception in do work. Doing nothing by default
      * @param ex
      */
