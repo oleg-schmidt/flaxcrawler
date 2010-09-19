@@ -49,7 +49,9 @@ public class DefaultScheduler implements Scheduler {
             CrawlerTask task = null;
 
             try {
-                task = schedulerQueue.poll();
+                synchronized (syncRoot) {
+                    task = schedulerQueue.poll();
+                }
                 if (task != null) {
                     if (!statisticsService.isCrawled(task.getUrl())) {
                         taskQueue.enqueue(task);
