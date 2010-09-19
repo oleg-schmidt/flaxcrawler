@@ -120,26 +120,38 @@ public class BerkleyQueue implements Queue {
     public synchronized Object poll() {
         Object obj = innerQueue.poll();
 
+        if (obj == null && berkleyQueueIndex.count() > 0) {
+            loadInnerQueueFromBerkley(queueCapacity - innerQueue.size());
+            return innerQueue.poll();
+        }
+
         if (loadToBerkley && innerQueue.size() <= (queueCapacity / 2)) {
-            log.info("Tasks count is lesser than queueCapacity/2, using in-memory now");
+            log.info("Tasks count is lesser than queueCapacity/2, using in-memory queue now");
             loadToBerkley = false;
-        } else if (loadToBerkley && innerQueue.size() <= (queueCapacity / 10)) {
-            loadToBerkley = false;
-
-            log.info("Tasks count is lesser than queueCapacity/10, loading tasks from berkley db");
-            // It's time to load tasks from the berkley db
-            for (int i = innerQueue.size(); i < queueCapacity; i++) {
-                Object toLoad = pollFromBerkley();
-
-                if (toLoad == null) {
-                    break;
-                }
-
-                innerQueue.add(toLoad);
-            }
         }
 
         return obj;
+    }
+
+    /**
+     * Loads tasks from the berkley queue to the inner queue
+     */
+    private void loadInnerQueueFromBerkley(int count) {
+        log.info("Loading up to " + count + " tasks from the berkley queue to the inner queue");
+
+        int loaded = 0;
+        for (int i = 0; i < count; i++) {
+            Object toLoad = pollFromBerkley();
+
+            if (toLoad == null) {
+                break;
+            }
+
+            innerQueue.add(toLoad);
+            loaded++;
+        }
+
+        log.info(loaded + " tasks loaded from the berkley queue to the inner queue");
     }
 
     @Override
