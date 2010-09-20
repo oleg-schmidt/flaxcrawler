@@ -1,7 +1,9 @@
 package com.googlecode.flaxcrawler.concurrent;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.log4j.Logger;
 
 /**
@@ -16,6 +18,19 @@ public class TaskQueueImpl implements TaskQueue {
     private final Object syncRoot = new Object();
     private final Object queueSyncRoot = new Object();
     private int processingTasksCount;
+    private int maxParallelProcessingSequences;
+    private Map<String, Integer> processingSequences = new HashMap<String, Integer>();
+    // Maximum loops count while searching for suitable task
+    private final static int MAX_LOOPS = 1000;
+
+    /**
+     * Sets maximum number of parallel thread processing tasks with the same sequence name.
+     * Default value - 0 (unlimited). Limit is ignored for tasks with sequence name equal to {@code null}.
+     * @param maxParallelProcessingSequences
+     */
+    public void setMaxParallelProcessingSequences(int maxParallelProcessingSequences) {
+        this.maxParallelProcessingSequences = maxParallelProcessingSequences;
+    }
 
     /**
      * Sets inner queue ({@link DefaultQueue} is used by default. Also you can use {@link BerkleyQueue}.)
@@ -71,12 +86,6 @@ public class TaskQueueImpl implements TaskQueue {
         }
     }
 
-    public void taskProcessed(Task task) {
-        synchronized (queueSyncRoot) {
-            processingTasksCount--;
-        }
-    }
-
     @Override
     public void enqueue(Task task) throws TaskQueueException {
         synchronized (queueSyncRoot) {
@@ -99,14 +108,28 @@ public class TaskQueueImpl implements TaskQueue {
 
     @Override
     public Task dequeue() {
-        synchronized (queueSyncRoot) {
-            Task task = (Task) queue.poll();
+        // Looping through the queue until suitable task is found
+        for (int i = 0; i < MAX_LOOPS; i++) {
+            synchronized (queueSyncRoot) {
+                Task task = (Task) queue.poll();
 
-            if (task != null) {
-                processingTasksCount++;
+                if (task != null) {
+                    if (startProcessingTask(task)) {
+                        // Task is ok, returning it
+                        processingTasksCount++;
+                        return task;
+                    } else {
+                        // Max parallel processing sequences limit was hit, adding task to the end of queue
+                        queue.add(task);
+                    }
+                } else if (task == null) {
+                    return task;
+                }
             }
-            return task;
         }
+
+        // Nothing found, returning null
+        return null;
     }
 
     @Override
@@ -136,5 +159,61 @@ public class TaskQueueImpl implements TaskQueue {
 
     protected void setStarted(boolean started) {
         this.started = started;
+    }
+
+    /**
+     * Method is called when task is dequeued. Method checks maxParallelProcessingSequences value
+     * and returns {@code true} if limit is not hit and worker can process with this task, or {@code false}
+     * if task execution should be deferred.
+     * @param task
+     * @return
+     */
+    protected boolean startProcessingTask(Task task) {
+        if (maxParallelProcessingSequences == 0 || task.getSequenceName() == null) {
+            return true;
+        }
+
+        synchronized (queueSyncRoot) {
+            Integer count = processingSequences.get(task.getSequenceName());
+
+            if (count == null) {
+                count = 0;
+            }
+
+            if (count == maxParallelProcessingSequences) {
+                // Limit already hit for this sequence, returning false
+                return false;
+            }
+
+            processingSequences.put(task.getSequenceName(), count + 1);
+        }
+
+        return true;
+    }
+
+    /**
+     * Method is called when task has been processed. Decrements processing sequences counter.
+     * @param task
+     */
+    protected void stopProcessingTask(Task task) {
+        if (task.getSequenceName() == null) {
+            return;
+        }
+
+        synchronized (queueSyncRoot) {
+            Integer count = processingSequences.get(task.getSequenceName());
+            processingSequences.put(task.getSequenceName(), count - 1);
+        }
+    }
+
+    /**
+     * Method is called by a worker after task is processed
+     * @param task
+     */
+    public void taskProcessed(Task task) {
+        synchronized (queueSyncRoot) {
+            processingTasksCount--;
+            stopProcessingTask(task);
+        }
     }
 }

@@ -3,9 +3,7 @@ package com.googlecode.flaxcrawler;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.apache.log4j.Logger;
 import com.googlecode.flaxcrawler.concurrent.BaseTaskQueueWorker;
 import com.googlecode.flaxcrawler.concurrent.BerkleyQueue;
@@ -62,6 +60,7 @@ public class CrawlerController {
             if (queue != null) {
                 log.info("Queue is overriden, setting it instead of default inner task queue");
                 ((TaskQueueImpl) taskQueue).setQueue(queue);
+                ((TaskQueueImpl) taskQueue).setMaxParallelProcessingSequences(crawlerConfiguration.getMaxParallelRequests());
             }
 
             log.info("Initializing scheduler");
@@ -190,54 +189,6 @@ public class CrawlerController {
     public void addSeed(URL url) {
         seeds.add(url);
     }
-    /**
-     * Contains pairs "domain":"number of workers processing it now"
-     */
-    private Map<String, Integer> activeProcessingDomains = new HashMap<String, Integer>();
-
-    /**
-     * Checks amount of tasks processing requests to specified domain.
-     * If it exceeds {@code maxParallelRequest} limit - return {@code false}.
-     * @param domainName
-     * @return
-     */
-    private boolean startProcessingDomain(String domainName) {
-        synchronized (workerSyncRoot) {
-            // Getting amount of crawlers processing requests to this domain
-            Integer count = activeProcessingDomains.get(domainName);
-
-            if (count == null) {
-                count = 0;
-            }
-
-            DomainConstraints domainConstraints = crawlerConfiguration.getDomainConstraints(domainName);
-            int maxParallelRequests = domainConstraints == null ? crawlerConfiguration.getMaxParallelRequests() : domainConstraints.getMaxParallelRequests();
-
-            // Checking maxParallelRequest limit
-            if (maxParallelRequests > 0 && count == maxParallelRequests) {
-                return false;
-            } else {
-                activeProcessingDomains.put(domainName, count + 1);
-                return true;
-            }
-        }
-    }
-
-    /**
-     * Decrementing active processing requests counter
-     * @param domainName
-     */
-    private void stopProcessingDomain(String domainName) {
-        synchronized (workerSyncRoot) {
-            // Getting amount of crawlers processing requests to this domain
-            Integer count = activeProcessingDomains.get(domainName);
-
-            if (count != null) {
-                // Decrementing amount
-                activeProcessingDomains.put(domainName, count - 1);
-            }
-        }
-    }
 
     /**
      * Checks maximum http errors limit
@@ -363,18 +314,11 @@ public class CrawlerController {
                 return;
             }
 
-            if (!startProcessingDomain(crawlerTask.getDomain())) {
-                log.debug("Max parallel requests limit is exceeded - deferring task");
-                deferCrawlerTask(crawlerTask);
-                return;
-            }
-
             try {
                 Page page = crawler.crawl(crawlerTask);
                 processPage(page, crawlerTask);
             } finally {
                 log.debug("Stopping processing task " + crawlerTask.getDomain());
-                stopProcessingDomain(crawlerTask.getDomain());
             }
         }
 

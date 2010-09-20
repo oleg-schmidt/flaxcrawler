@@ -38,6 +38,11 @@ public class CrawlerTask extends BaseTask {
         this.timeAdded = new Date();
     }
 
+    @Override
+    public String getSequenceName() {
+        return domain;
+    }
+
     /**
      * Task creation time
      * @return

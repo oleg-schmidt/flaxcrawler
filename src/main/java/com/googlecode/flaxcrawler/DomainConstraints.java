@@ -7,7 +7,6 @@ package com.googlecode.flaxcrawler;
 public class DomainConstraints {
 
     private int maxLevel;
-    private int maxParallelRequests;
     private int politenessPeriod;
 
     /**
@@ -24,22 +23,6 @@ public class DomainConstraints {
      */
     public void setMaxLevel(int maxLevel) {
         this.maxLevel = maxLevel;
-    }
-
-    /**
-     * Returns maximum parallel requests to a single domain limit.  0 - unlimited. By default - 0.
-     * @return
-     */
-    public int getMaxParallelRequests() {
-        return maxParallelRequests;
-    }
-
-    /**
-     * Sets maximum parallel requests to a single domain limit. 0 - unlimited. By default - 0.
-     * @param maxParallelRequests
-     */
-    public void setMaxParallelRequests(int maxParallelRequests) {
-        this.maxParallelRequests = maxParallelRequests;
     }
 
     /**
