@@ -86,7 +86,8 @@ public class DefaultStatisticsService implements StatisticsService {
     public boolean isCrawled(String url) {
         synchronized (this) {
             try {
-                return urlsIndex.contains(url);
+                return false;
+                //return urlsIndex.contains(url);
             } catch (DatabaseException ex) {
                 log.warn("Error checking if url " + url + " is in berkley db index", ex);
                 return false;
@@ -97,7 +98,7 @@ public class DefaultStatisticsService implements StatisticsService {
     public void afterScheduling(CrawlerTask task) {
         synchronized (this) {
             try {
-                urlsIndex.put(new UrlElement(task.getUrl()));
+                //urlsIndex.put(new UrlElement(task.getUrl()));
             } catch (DatabaseException ex) {
                 log.warn("Error inserting " + task.getUrl() + " in the berkley db index", ex);
             }
