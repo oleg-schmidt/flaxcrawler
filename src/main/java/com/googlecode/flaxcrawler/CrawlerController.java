@@ -183,6 +183,15 @@ public class CrawlerController {
     }
 
     /**
+     * Gets domain statistics
+     * @param domainName
+     * @return
+     */
+    public DomainStatistics getDomainStatistics(String domainName) {
+        return statisticsService.getDomainStatistics(domainName);
+    }
+
+    /**
      * Adds crawler seed
      * @param url
      */
