@@ -20,6 +20,8 @@ import java.util.Map;
  */
 public class DefaultStatisticsService implements StatisticsService {
 
+    private final Object syncRoot = new Object();
+    private final Object indexSyncRoot = new Object();
     private Logger log = Logger.getLogger(this.getClass());
     private Environment environment;
     private EntityStore statisticsStore;
@@ -42,7 +44,9 @@ public class DefaultStatisticsService implements StatisticsService {
 
         environmentConfig.setAllowCreate(true);
         environmentConfig.setTransactional(false);
-        environmentConfig.setSharedCache(true);
+        environmentConfig.setLocking(false);
+        environmentConfig.setCachePercent(50);
+
         storeConfig.setAllowCreate(true);
         storeConfig.setTransactional(false);
         storeConfig.setTemporary(true);
@@ -71,23 +75,24 @@ public class DefaultStatisticsService implements StatisticsService {
      * Disposes statistics store
      */
     public void dispose() {
-        synchronized (this) {
-            try {
-                statisticsStore.close();
-                environment.close();
+        synchronized (syncRoot) {
+            synchronized (indexSyncRoot) {
+                try {
+                    statisticsStore.close();
+                    environment.close();
 
-                log.info("Environment closed successfully");
-            } catch (DatabaseException ex) {
-                log.error("Error while closing environment", ex);
+                    log.info("Environment closed successfully");
+                } catch (DatabaseException ex) {
+                    log.error("Error while closing environment", ex);
+                }
             }
         }
     }
 
     public boolean isCrawled(String url) {
-        synchronized (this) {
+        synchronized (indexSyncRoot) {
             try {
-                return false;
-                //return urlsIndex.contains(url);
+                return urlsIndex.contains(url);
             } catch (DatabaseException ex) {
                 log.warn("Error checking if url " + url + " is in berkley db index", ex);
                 return false;
@@ -96,20 +101,22 @@ public class DefaultStatisticsService implements StatisticsService {
     }
 
     public void afterScheduling(CrawlerTask task) {
-        synchronized (this) {
+        synchronized (indexSyncRoot) {
             try {
-                //urlsIndex.put(new UrlElement(task.getUrl()));
+                urlsIndex.put(new UrlElement(task.getUrl()));
             } catch (DatabaseException ex) {
                 log.warn("Error inserting " + task.getUrl() + " in the berkley db index", ex);
             }
+        }
 
+        synchronized (syncRoot) {
             updateDomainStatistics(task.getDomain(), 1, 0, 0, 0, 0);
             scheduled++;
         }
     }
 
     public void afterDownloading(CrawlerTask task, Page page) {
-        synchronized (this) {
+        synchronized (syncRoot) {
             long errorsCount = page.getResponseCode() >= 400 ? 1 : 0;
             long downloadedCount = errorsCount > 0 ? 0 : 1;
 
@@ -121,7 +128,7 @@ public class DefaultStatisticsService implements StatisticsService {
     }
 
     public void afterParsing(CrawlerTask task, Page page) {
-        synchronized (this) {
+        synchronized (syncRoot) {
             parsed++;
             updateDomainStatistics(task.getDomain(), 0, 0, 1, 0, 0);
         }
@@ -144,7 +151,7 @@ public class DefaultStatisticsService implements StatisticsService {
     }
 
     public DomainStatistics getDomainStatistics(String domainName) {
-        synchronized (this) {
+        synchronized (syncRoot) {
             DomainStatistics domainStatistics = statisticsMap.get(domainName);
 
             if (domainStatistics == null) {
@@ -165,7 +172,7 @@ public class DefaultStatisticsService implements StatisticsService {
      * @param responseCode
      */
     private void updateDomainStatistics(String domainName, long schedulled, long downloaded, long parsed, long errors, int responseCode) {
-        synchronized (this) {
+        synchronized (syncRoot) {
             DomainStatistics domainStatistics = getDomainStatistics(domainName);
 
             domainStatistics.setScheduled(domainStatistics.getScheduled() + schedulled);

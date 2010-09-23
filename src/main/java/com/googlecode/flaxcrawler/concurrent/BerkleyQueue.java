@@ -57,7 +57,9 @@ public class BerkleyQueue implements Queue {
 
         environmentConfig.setAllowCreate(true);
         environmentConfig.setTransactional(false);
-        environmentConfig.setSharedCache(true);
+        environmentConfig.setLocking(false);
+        environmentConfig.setCachePercent(5);
+
         storeConfig.setAllowCreate(true);
         storeConfig.setTransactional(false);
         storeConfig.setTemporary(true);
