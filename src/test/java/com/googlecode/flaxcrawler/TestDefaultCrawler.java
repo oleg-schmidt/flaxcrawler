@@ -6,6 +6,7 @@ import com.googlecode.flaxcrawler.download.DefaultDownloaderController;
 import com.googlecode.flaxcrawler.model.CrawlerTask;
 import com.googlecode.flaxcrawler.model.Page;
 import com.googlecode.flaxcrawler.parse.DefaultParserController;
+import org.junit.Ignore;
 import static org.junit.Assert.*;
 
 /**
@@ -20,7 +21,7 @@ public class TestDefaultCrawler {
         crawler.setDownloaderController(new DefaultDownloaderController());
         crawler.setParserController(new DefaultParserController());
 
-        CrawlerTask crawlerTask = new CrawlerTask("http://lenta.ru/", 0);
+        CrawlerTask crawlerTask = new CrawlerTask("http://www.wikipedia.org/", 0);
         Page page = crawler.crawl(crawlerTask);
 
         assertNotNull(page);

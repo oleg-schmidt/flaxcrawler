@@ -14,6 +14,7 @@ import static org.junit.Assert.*;
 public class TestDefaultStatisticsService {
 
     @Test
+    @Ignore
     public void testAfterScheduling() throws DatabaseException {
         DefaultStatisticsService statisticsService = null;
 

@@ -88,9 +88,9 @@ public class CrawlerController {
             try {
                 log.info("Starting crawling..");
 
-                if (seeds.size() == 0 && queue == null) {
+                if (seeds.isEmpty() && queue == null) {
                     throw new CrawlerException("There's no crawler seeds");
-                } else if (seeds.size() == 0) {
+                } else if (seeds.isEmpty()) {
                     log.warn("Crawler seeds are not set, but task queue was overriden");
                 }
 
@@ -161,6 +161,19 @@ public class CrawlerController {
     public void join() throws CrawlerException {
         try {
             taskQueue.join();
+        } catch (Exception ex) {
+            throw new CrawlerException("Error joining crawler workers threads", ex);
+        }
+    }
+
+    /**
+     * Joins crawler workers threads and waits for them to finish their work (or for timeout to exceed)
+     * @param timeout
+     * @throws CrawlerException
+     */
+    public void join(long timeout) throws CrawlerException {
+        try {
+            taskQueue.join(timeout);
         } catch (Exception ex) {
             throw new CrawlerException("Error joining crawler workers threads", ex);
         }
@@ -253,6 +266,8 @@ public class CrawlerController {
         synchronized (workerSyncRoot) {
             if (crawler.shouldCrawl(task, parentTask)) {
                 scheduler.schedule(task);
+            } else {
+                log.debug("Igoring task " + task.getUrl() + " - crawler returned false from shouldCrawl method");
             }
         }
     }
@@ -327,7 +342,7 @@ public class CrawlerController {
                 Page page = crawler.crawl(crawlerTask);
                 processPage(page, crawlerTask);
             } finally {
-                log.debug("Stopping processing task " + crawlerTask.getDomain());
+                log.debug("Stopping processing task " + crawlerTask.getUrl());
             }
         }
 

@@ -36,6 +36,13 @@ public interface TaskQueue {
     void join() throws TaskQueueException;
 
     /**
+     * Joins worker threads or waits for timeout to exceed
+     * @param timeout
+     * @throws TaskQueueException
+     */
+    void join(long timeout) throws TaskQueueException;
+
+    /**
      * Task queue size
      * @return
      */

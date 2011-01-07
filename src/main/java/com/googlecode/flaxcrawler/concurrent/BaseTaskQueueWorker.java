@@ -1,5 +1,6 @@
 package com.googlecode.flaxcrawler.concurrent;
 
+import java.util.logging.Level;
 import org.apache.log4j.Logger;
 
 /**
@@ -7,6 +8,7 @@ import org.apache.log4j.Logger;
  */
 public abstract class BaseTaskQueueWorker implements TaskQueueWorker {
 
+    private final static int DEFAULT_IDLE_TIMEOUT = 100;
     private final static int DEFAULT_STOP_TIMEOUT = 10000;
     private Logger log = Logger.getLogger(this.getClass());
     private TaskQueue taskQueue;
@@ -71,6 +73,15 @@ public abstract class BaseTaskQueueWorker implements TaskQueueWorker {
         }
     }
 
+    @Override
+    public void join(long timeout) {
+        try {
+            workerThread.join(timeout);
+        } catch (InterruptedException ex) {
+            // Ignoring
+        }
+    }
+
     /**
      * Implement this method in your workers
      * @param task
@@ -100,6 +111,13 @@ public abstract class BaseTaskQueueWorker implements TaskQueueWorker {
             } finally {
                 if (task != null) {
                     getTaskQueue().taskProcessed(task);
+                } else {
+                    try {
+                        // Worker is idle (no tasks found), so waiting for IDLE timeout
+                        Thread.sleep(DEFAULT_IDLE_TIMEOUT);
+                    } catch (InterruptedException ex) {
+                        // Ignoring
+                    }
                 }
             }
         }

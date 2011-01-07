@@ -80,6 +80,15 @@ public class TaskQueueImpl implements TaskQueue {
         }
     }
 
+    @Override
+    public void join(long timeout) throws TaskQueueException {
+        long workerTimeout = timeout / workers.size();
+
+        for (TaskQueueWorker worker : workers) {
+            worker.join(workerTimeout);
+        }
+    }
+
     public int getProcessingTasksCount() {
         synchronized (queueSyncRoot) {
             return processingTasksCount;
@@ -202,7 +211,7 @@ public class TaskQueueImpl implements TaskQueue {
 
         synchronized (queueSyncRoot) {
             Integer count = processingSequences.get(task.getSequenceName());
-            processingSequences.put(task.getSequenceName(), count - 1);
+            processingSequences.put(task.getSequenceName(), count == null ? 0 : count - 1);
         }
     }
 

@@ -21,6 +21,12 @@ public interface TaskQueueWorker {
     void join();
 
     /**
+     * Joins worker thread (or waits for timeout to exceed)
+     * @param timeout
+     */
+    void join(long timeout);
+
+    /**
      * Sets this workers queue
      * @param taskQueue
      */

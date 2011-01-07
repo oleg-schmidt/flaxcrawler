@@ -7,7 +7,7 @@ import java.util.Queue;
 import org.apache.log4j.Logger;
 
 /**
- * Standart scheduler implementation. Starts an asyncronous worker that reads urls from the queue
+ * Standard scheduler implementation. Starts an asyncronous worker thread that reads urls from the queue
  * and adds them to the {@code TaskQueue}.
  */
 public class DefaultScheduler implements Scheduler {
@@ -26,7 +26,7 @@ public class DefaultScheduler implements Scheduler {
         workerThread = new Thread(new Runnable() {
 
             public void run() {
-                DoWorkLoop();
+                doWorkLoop();
             }
         });
         workerThread.setDaemon(true);
@@ -44,7 +44,7 @@ public class DefaultScheduler implements Scheduler {
     /**
      * Reads urls from queue and adds them to the TaskQueue (if url was not crawled yet)
      */
-    private void DoWorkLoop() {
+    private void doWorkLoop() {
         while (true) {
             CrawlerTask task = null;
 

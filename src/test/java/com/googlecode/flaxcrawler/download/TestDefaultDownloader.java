@@ -1,26 +1,22 @@
 package com.googlecode.flaxcrawler.download;
 
-import com.googlecode.flaxcrawler.download.DefaultDownloader;
-import com.googlecode.flaxcrawler.download.DownloadException;
-import com.googlecode.flaxcrawler.download.DefaultProxyController;
+import org.junit.Ignore;
 import java.net.MalformedURLException;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Ignore;
 import org.junit.Test;
 import com.googlecode.flaxcrawler.model.Page;
 import static org.junit.Assert.*;
 
 /**
  *
- * @author ameshkov
  */
 public class TestDefaultDownloader {
 
     @Test
-    //@Ignore
+    @Ignore
     public void testDownload() throws MalformedURLException, DownloadException {
         List<Proxy> proxies = new ArrayList<Proxy>();
         proxies.add(Proxy.NO_PROXY);
@@ -32,7 +28,7 @@ public class TestDefaultDownloader {
         downloader.setProxyController(proxyController);
         downloader.setTriesCount(3);
 
-        Page page = downloader.download(new URL("http://flax.ru/search?query=photoshop"));
+        Page page = downloader.download(new URL("http://www.wikipedia.org"));
         assertNotNull(page);
 
         System.out.println("Response time: " + page.getResponseTime());
