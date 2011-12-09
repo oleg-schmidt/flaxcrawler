@@ -265,7 +265,7 @@ public class DefaultDownloader implements Downloader {
         int contentLength = NumberUtils.toInt(page.getHeader("content-length"));
 
         // If "Content-Length" header is specified - checking maxContentLength
-        if (maxContentLength > 0 && contentLength > 0 && contentLength < maxContentLength) {
+        if (maxContentLength > 0 && contentLength > 0 && contentLength > maxContentLength) {
             log.info(page.getUrl() + " content length exceeded limit, stopping downloading");
             return false;
         }
