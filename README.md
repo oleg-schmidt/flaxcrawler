@@ -86,19 +86,19 @@ Example
             }
         }
 
-        /**
-         * You may check if you want to crawl next task
-         * @param crawlerTask Task that is going to be crawled if you return {@code true}
-         * @param parent parent.getUrl() page contain link to a crawlerTask.getUrl() or redirects to it
-         * @return
-         */
-        @Override
-        public boolean shouldCrawl(CrawlerTask crawlerTask, CrawlerTask parent) {
-            // Default implementation returns true if crawlerTask.getDomainName() == parent.getDomainName()
-            return super.shouldCrawl(crawlerTask, parent);
+            /**
+             * You may check if you want to crawl next task
+             * @param crawlerTask Task that is going to be crawled if you return {@code true}
+             * @param parent parent.getUrl() page contain link to a crawlerTask.getUrl() or redirects to it
+             * @return
+             */
+            @Override
+            public boolean shouldCrawl(CrawlerTask crawlerTask, CrawlerTask parent) {
+                // Default implementation returns true if crawlerTask.getDomainName() == parent.getDomainName()
+                return super.shouldCrawl(crawlerTask, parent);
+            }
         }
     }
-}
 
 As you can see in the code above, you should override one method to get access to the results of the crawler work:
 
