@@ -120,5 +120,5 @@ Samples
 
 You can find several samples of the flaxcrawler usage and customization:
 
-    FullConfigurationExample
-    SpringExample 
+    FullConfigurationExample: https://code.google.com/p/flaxcrawler/wiki/FullConfigurationExample 
+    SpringExample: https://code.google.com/p/flaxcrawler/wiki/SpringExample 
