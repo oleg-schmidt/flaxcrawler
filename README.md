@@ -3,40 +3,40 @@ Introduction
 flaxcrawler is an open source web crawler written in Java. It is very fast lightweight multi-threaded crawler, easy to setup and use. You can configure its behaviour with a plenty of settings. Or you can even use your own implementations of the flaxcrawler components.
 Example
 
-package com.googlecode.flaxcrawler.examples;
+    package com.googlecode.flaxcrawler.examples;
 
-import com.googlecode.flaxcrawler.CrawlerConfiguration;
-import com.googlecode.flaxcrawler.CrawlerController;
-import com.googlecode.flaxcrawler.CrawlerException;
-import com.googlecode.flaxcrawler.DefaultCrawler;
-import com.googlecode.flaxcrawler.download.DefaultDownloaderController;
-import com.googlecode.flaxcrawler.model.CrawlerTask;
-import com.googlecode.flaxcrawler.model.Page;
-import com.googlecode.flaxcrawler.parse.DefaultParserController;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
+    import com.googlecode.flaxcrawler.CrawlerConfiguration;
+    import com.googlecode.flaxcrawler.CrawlerController;
+    import com.googlecode.flaxcrawler.CrawlerException;
+    import com.googlecode.flaxcrawler.DefaultCrawler;
+    import com.googlecode.flaxcrawler.download.DefaultDownloaderController;
+    import com.googlecode.flaxcrawler.model.CrawlerTask;
+    import com.googlecode.flaxcrawler.model.Page;
+    import com.googlecode.flaxcrawler.parse.DefaultParserController;
+    import java.net.HttpURLConnection;
+    import java.net.MalformedURLException;
+    import java.net.URL;
 
-public class FirstExample {
+    public class FirstExample {
 
-    public static void main(String[] args) throws MalformedURLException, CrawlerException {
-        // Setting up downloader controller
-        DefaultDownloaderController downloaderController = new DefaultDownloaderController();
-        // Setting up parser controller
-        DefaultParserController parserController = new DefaultParserController();
+        public static void main(String[] args) throws MalformedURLException, CrawlerException {
+            // Setting up downloader controller
+            DefaultDownloaderController downloaderController = new DefaultDownloaderController();
+            // Setting up parser controller
+            DefaultParserController parserController = new DefaultParserController();
 
         // Creating crawler configuration object
         CrawlerConfiguration configuration = new CrawlerConfiguration();
 
-        // Creating five crawlers (to work with 5 threads)
-        for (int i = 0; i < 5; i++) {
-            // Creating crawler and setting downloader and parser controllers
-            DefaultCrawler crawler = new ExampleCrawler();
-            crawler.setDownloaderController(downloaderController);
-            crawler.setParserController(parserController);
-            // Adding crawler to the configuration object
-            configuration.addCrawler(crawler);
-        }
+            // Creating five crawlers (to work with 5 threads)
+            for (int i = 0; i < 5; i++) {
+                // Creating crawler and setting downloader and parser controllers
+                DefaultCrawler crawler = new ExampleCrawler();
+                crawler.setDownloaderController(downloaderController);
+                crawler.setParserController(parserController);
+                // Adding crawler to the configuration object
+                configuration.addCrawler(crawler);
+            }
 
         // Setting maximum parallel requests to a single site limit
         configuration.setMaxParallelRequests(1);
